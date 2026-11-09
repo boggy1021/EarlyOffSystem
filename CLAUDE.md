@@ -2,6 +2,8 @@
 
 LINE 提前下班申請系統。規格見 `提前下班申請系統 規格書.md`，部署步驟見 `部署步驟.md`。
 
+**接續開發前先讀 `開發紀錄.md`**：目前狀態、部署 ID 與網址、待辦與待決事項。
+
 ## 架構
 - `src/`：Google Apps Script（clasp 推送）。同一個網頁應用程式 `/exec` 同時是 LIFF 的 JSON API 和 Messaging API Webhook（`doPost` 依 body 有沒有 `events` 分流）。
 - `liff/`：LIFF 前端，GitHub Actions 部署到 GitHub Pages。Apps Script 的 HtmlService 跑在 googleusercontent iframe 裡，`liff.init` / `shareTargetPicker` 不可靠，所以前端不放在 Apps Script。
