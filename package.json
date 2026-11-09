@@ -3,7 +3,7 @@
   "private": true,
   "description": "LINE 提前下班申請系統（Google Apps Script + Google Sheets + LIFF）",
   "scripts": {
-    "test": "node --test test/",
+    "test": "node --test \"test/*.test.js\"",
     "check": "node test/syntax-check.js",
     "parity": "..\\OvertimeSalary\\.venv\\Scripts\\python.exe -I test\\parity\\dump_python.py ..\\OvertimeSalary && node --test test/parity.test.js",
     "push": "npm run check && npm test && clasp push --force"

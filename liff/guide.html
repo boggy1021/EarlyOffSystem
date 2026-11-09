@@ -158,6 +158,12 @@ section { display: grid; gap: 22px; }
 .picker { padding: 12px; display: grid; gap: 8px; }
 .picker .g { display: flex; gap: 10px; align-items: center; background: var(--paper); border-radius: 12px; padding: 8px 10px; }
 .picker .g.hit { outline: 3px solid var(--peach); }
+.picker .g .ck { margin-left: auto; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line); flex: none; }
+.picker .g.hit .ck { background: var(--green); border-color: var(--green); color: #fff; display: grid; place-items: center; font-size: 11px; }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-weight: 700; font-size: 12px; background: var(--paper); color: var(--soft); }
+.tabs span { padding: 7px 0; border-bottom: 2px solid var(--line); }
+.tabs .on { color: var(--green-deep); border-bottom-color: var(--green); }
+.picker .send { background: var(--green); color: #fff; border-radius: 10px; text-align: center; padding: 7px; font-weight: 700; }
 .av { width: 30px; height: 30px; border-radius: 50%; background: var(--sky-wash); display: grid; place-items: center; font-size: 13px; color: var(--sky); font-weight: 700; flex: none; }
 
 /* ── 兩個按鈕 ── */
@@ -326,16 +332,18 @@ summary:focus-visible, a:focus-visible { outline: 3px solid var(--sky); outline-
         <div class="txt">
           <div class="num">2</div>
           <h3>選「淨新洗腎室」群組分享</h3>
-          <p>LINE 會跳出選聊天室的畫面，選<b>「淨新洗腎室」群組</b>再按傳送。群組裡就會出現一張由你發出的申請卡片。</p>
-          <p class="note">不小心關掉、沒選到群組？到「我的申請」按「重新分享到群組」就好。</p>
+          <p>LINE 會跳出選聊天室的畫面，切到<b>「群組」</b>分頁（或用上方搜尋），勾選<b>「淨新洗腎室」</b>再按傳送。群組裡就會出現一張由你發出的申請卡片。</p>
+          <p class="note">一定要選到群組，同事才看得到。不小心關掉、沒選到群組？到「我的申請」按「重新分享到群組」就好。</p>
         </div>
         <div class="phone" aria-hidden="true">
           <div class="screen" style="min-height:220px">
             <div class="bar" style="background:var(--phone)">選擇傳送對象</div>
+            <div class="tabs"><span>好友</span><span class="on">群組</span></div>
             <div class="picker">
-              <div class="g hit"><div class="av">淨</div><span>淨新洗腎室</span></div>
-              <div class="g"><div class="av">家</div><span>家人</span></div>
-              <div class="g"><div class="av">友</div><span>大學同學</span></div>
+              <div class="g hit"><div class="av">淨</div><span>淨新洗腎室</span><span class="ck">✓</span></div>
+              <div class="g"><div class="av">家</div><span>家人</span><span class="ck"></span></div>
+              <div class="g"><div class="av">友</div><span>大學同學</span><span class="ck"></span></div>
+              <div class="send">傳送</div>
             </div>
           </div>
         </div>

@@ -116,7 +116,8 @@
     if (!liff.isApiAvailable('shareTargetPicker')) {
       return Promise.resolve(after(false, '請在手機的 LINE App 裡開啟，才能分享到群組。'));
     }
-    return liff.shareTargetPicker([flex], { isMultiple: false }).then(function (res) {
+    // isMultiple: false 只能選一位好友、不會列出群組，所以必須是 true
+    return liff.shareTargetPicker([flex], { isMultiple: true }).then(function (res) {
       after(!!res, res ? '' : '您沒有選擇聊天室，申請卡片還沒送出。');
     }).catch(function (e) {
       after(false, '分享失敗：' + (e.message || e));
@@ -155,7 +156,7 @@
         return render(parts);
       }
       parts.push(h('div', { class: 'card' },
-        h('p', null, '送出後請選擇「', h('b', null, d.groupName), '」群組，把申請卡片分享出去。'),
+        h('p', null, '送出後請在「群組」分頁勾選「', h('b', null, d.groupName), '」，再按傳送。'),
         h('p', { class: 'muted' }, '接下來在班、可以同意的同仁 ' + d.eligibleCount + ' 位，需要 ' + d.threshold +
           ' 位同意；' + d.timeoutMin + ' 分鐘內未達門檻會自動失效。')));
       var btn = h('button', {
