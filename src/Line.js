@@ -72,7 +72,7 @@ function shareCard_(req, cfg) {
           flexText_(req.name, { weight: 'bold', size: 'xl', margin: 'md' }),
           flexRow_('班別', minToHm(req.start) + '–' + minToHm(req.end)),
           flexRow_('申請時間', fmt_(new Date(req.createdMs), 'HH:mm')),
-          flexText_('需要同一班 ' + cfg.threshold + ' 位同仁同意；' +
+          flexText_('需要 ' + cfg.threshold + ' 位在班同仁同意；' +
                     fmt_(new Date(req.expiresMs), 'HH:mm') + ' 前有效。',
                     { size: 'xs', color: '#999999', margin: 'md' })
         ]

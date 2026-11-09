@@ -156,7 +156,7 @@
       }
       parts.push(h('div', { class: 'card' },
         h('p', null, '送出後請選擇「', h('b', null, d.groupName), '」，把申請卡片分享到群組。'),
-        h('p', { class: 'muted' }, '同一班可以同意的同仁 ' + d.eligibleCount + ' 位，需要 ' + d.threshold +
+        h('p', { class: 'muted' }, '接下來在班、可以同意的同仁 ' + d.eligibleCount + ' 位，需要 ' + d.threshold +
           ' 位同意；' + d.timeoutMin + ' 分鐘內未達門檻會自動失效。')));
       var btn = h('button', {
         onclick: function () {

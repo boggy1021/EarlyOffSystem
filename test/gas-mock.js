@@ -112,11 +112,15 @@ function createEnv(opts = {}) {
       fetch: (url, o) => {
         if (url.includes('/oauth2/v2.1/verify')) {
           // 測試用 token 格式：「tok:<userId>」
+          // 「expired」模擬過期；其他非 tok: 開頭的模擬 channel ID 錯誤
           const t = o.payload.id_token;
           const ok = t.startsWith('tok:');
+          const err = t === 'expired' ? 'IdToken expired.' : 'Invalid IdToken Audience.';
           return {
             getResponseCode: () => (ok ? 200 : 400),
-            getContentText: () => JSON.stringify({ sub: t.slice(4), name: 'LINE-' + t.slice(4), exp: clock.now / 1000 + 3600 })
+            getContentText: () => JSON.stringify(ok
+              ? { sub: t.slice(4), name: 'LINE-' + t.slice(4), exp: clock.now / 1000 + 3600 }
+              : { error: 'invalid_request', error_description: err })
           };
         }
         pushes.push({ url, body: JSON.parse(o.payload) });

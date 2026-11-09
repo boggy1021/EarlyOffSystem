@@ -67,9 +67,9 @@ test('一般流程：申請 → 不算數的同意 → 兩票核准 → 推播�
   assert.equal(ap.data.request.expiresAt, '15:30');
   assert.equal(call('uE1', 'apply').code, 'DENIED');      // 同時只能一筆
 
-  let v = call('uE5', 'agree', { id });                   // 戊 7-3：不同班
+  let v = call('uE5', 'agree', { id });                   // 戊 7-3：14:50 已下班
   assert.equal(v.data.counted, false);
-  assert.match(v.data.reason, /不在這一班/);
+  assert.match(v.data.reason, /已過下班時間/);
   v = call('uE6', 'agree', { id });                       // 己：休假
   assert.match(v.data.reason, /休假/);
   v = call('uE1', 'agree', { id });                       // 本人
@@ -151,6 +151,18 @@ test('進行中被通報 → 之後的同意不會觸發核准；主管核准後
   assert.equal(r.code, 'DENIED');
 });
 
+test('不同班別但正在上班的同仁也能同意', () => {
+  const { call, at, pushes } = setup();
+  at('14:40');
+  const me = call('uE1', 'me');
+  assert.equal(me.data.eligibleCount, 4);                 // 乙丙丁 + 7-3 的戊（14:50 才下班）
+  const id = call('uE1', 'apply').data.request.id;
+  assert.equal(call('uE5', 'agree', { id }).data.counted, true);   // 戊 7-3，還在班
+  const v = call('uE2', 'agree', { id });
+  assert.equal(v.data.request.status, '已核准');
+  assert.equal(pushes.length, 1);
+});
+
 test('逾時與表定下班上限', () => {
   const { call, at } = setup();
   at('15:00');
@@ -201,7 +213,10 @@ test('綁定：選名字 → 待確認 → 不能使用；已確認後不能改'
 test('ID token 無效、未知動作、Webhook', () => {
   const { ctx, pushes } = setup();
   const raw = (body) => JSON.parse(ctx.doPost({ postData: { contents: JSON.stringify(body) } }).s);
-  assert.equal(raw({ action: 'me', idToken: 'bad' }).code, 'TOKEN');
+  assert.equal(raw({ action: 'me', idToken: 'expired' }).code, 'TOKEN');
+  const bad = raw({ action: 'me', idToken: 'bad' });
+  assert.equal(bad.code, 'AUTH_CONFIG');
+  assert.match(bad.error, /Invalid IdToken Audience/);
   assert.equal(raw({ action: 'nope', idToken: 'tok:uE1' }).code, 'BAD_REQUEST');
   const out = ctx.doPost({ postData: { contents: JSON.stringify({ events: [{ type: 'follow', replyToken: 'r1' }] }) } });
   assert.equal(out.s, 'OK');

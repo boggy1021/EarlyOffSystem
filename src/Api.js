@@ -92,12 +92,13 @@ function boundEmpIds_(emps) {
 }
 
 /** 申請人與同仁都可以使用的資格檢查（同意、通知主管共用）。 */
-function colleagueEligibility_(req, emp) {
+function colleagueEligibility_(req, emp, now) {
   return checkColleague({
     request: req,
     voter: myShiftOn_(emp.empId, req.date),
     voterEmpId: emp.empId,
-    voterApprovedToday: approvedEmpIdsOn_(req.date).indexOf(emp.empId) >= 0
+    voterApprovedToday: approvedEmpIdsOn_(req.date).indexOf(emp.empId) >= 0,
+    now: now
   });
 }
 
@@ -108,11 +109,15 @@ function applyContext_(emp, now, cfg) {
   var me = null;
   today.forEach(function (s) { if (s.empId === emp.empId && !me) me = s; });
   var mine = reqs.filter(function (r) { return r.empId === emp.empId && r.date === now.date; });
+  // 申請有效期間 = 現在 ～ min(現在 + 逾時分鐘, 表定下班)；這段時間有上班的同仁都可能同意
+  var toMin = me ? Math.min(now.min + cfg.timeoutMin, me.end) : now.min;
   var eligible = me ? eligibleColleagues({
-    me: me, todayShifts: today, approvedEmpIds: approvedEmpIdsOn_(now.date, reqs), boundEmpIds: boundEmpIds_(emps)
+    me: me, fromMin: now.min, toMin: toMin, todayShifts: today,
+    approvedEmpIds: approvedEmpIdsOn_(now.date, reqs), boundEmpIds: boundEmpIds_(emps)
   }) : [];
   var check = checkCanApply({
-    now: now, me: me, myRequestsToday: mine, eligibleCount: eligible.length, threshold: cfg.threshold
+    now: now, me: me, myRequestsToday: mine, eligibleCount: eligible.length, threshold: cfg.threshold,
+    windowMin: Math.max(0, toMin - now.min)
   });
   return { me: me, mine: mine, eligibleCount: eligible.length, check: check };
 }
@@ -189,7 +194,7 @@ function apiView_(who, body) {
   var emp = requireEmployee_(who.userId);
   var req = findRequest_(body.id);
   var cfg = settings_();
-  var elig = colleagueEligibility_(req, emp);
+  var elig = colleagueEligibility_(req, emp, now_());
   var mineCounted = countedVotes_(req.id).some(function (v) { return v.voterEmpId === emp.empId; });
   var report = checkCanReport(req, elig, now_());
   return {
@@ -205,7 +210,7 @@ function apiAgree_(who, body) {
   var emp = requireEmployee_(who.userId);
   var req = findRequest_(body.id);
   var cfg = settings_();
-  var elig = colleagueEligibility_(req, emp);
+  var elig = colleagueEligibility_(req, emp, now_());
   var res = evaluateVote({
     request: req, eligibility: elig, existingVotes: votesFor_(req.id),
     voterEmpId: emp.empId, threshold: cfg.threshold
@@ -227,7 +232,7 @@ function apiAgree_(who, body) {
 function apiReport_(who, body) {
   var emp = requireEmployee_(who.userId);
   var req = findRequest_(body.id);
-  var elig = colleagueEligibility_(req, emp);
+  var elig = colleagueEligibility_(req, emp, now_());
   var chk = checkCanReport(req, elig, now_());
   if (!chk.ok) throw apiError_('DENIED', chk.reason);
   var reason = String(body.reason || '').trim().slice(0, 200);

@@ -31,7 +31,7 @@ function shiftTable(dateStr) {
  * 解析一格班別代號。
  * 回傳 {raw, code, off, opener, start, end, baseStart, baseEnd, note, unknown}；時間為分鐘。
  * start/end 是實際排定時段（▲ 開門班已提早）；baseStart/baseEnd 是沒有提早的時段，
- * 用來判斷「同一班」。
+ * 匯入時存成「比對上班／下班」欄，供參考。
  */
 function parseCode(raw, dateStr) {
   // Python: str(raw or '').strip()
@@ -121,7 +121,7 @@ function parseScheduleGrid(values, year, month) {
   return out;
 }
 
-/** 「同一班」的比對鍵：沒有 ▲ 提早的上下班時間。 */
+/** 沒有 ▲ 提早的上下班時間（匯入時存成比對欄，供參考）。 */
 function shiftKeyOf(baseStart, baseEnd) {
   if (baseStart === null || baseStart === undefined || baseStart === '' ||
       baseEnd === null || baseEnd === undefined || baseEnd === '') return '';

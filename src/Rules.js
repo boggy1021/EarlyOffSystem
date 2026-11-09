@@ -31,19 +31,20 @@ function isWorking(shift) {
          shift.end !== null && shift.end !== undefined && shift.end !== '';
 }
 
-function sameShift(a, b) {
-  return isWorking(a) && isWorking(b) &&
-         shiftKeyOf(a.baseStart, a.baseEnd) === shiftKeyOf(b.baseStart, b.baseEnd);
+/** 某個時刻（當天分鐘）是否在上班時間內：上班時間（含）～下班時間（不含），用實際排定時段（▲ 已提早）。 */
+function onDutyAt(shift, min) {
+  return isWorking(shift) && shift.start <= min && min < shift.end;
 }
 
 /**
- * 同班中「現在可以同意」的同仁編號：同一班、不是本人、今天沒有已核准的提前下班、已完成綁定。
- * ctx: {me: shift, todayShifts: [shift], approvedEmpIds: [id], boundEmpIds: [id]}
+ * 這筆申請有效期間內「可以同意」的同仁編號：在 [fromMin, toMin) 期間有上班、不是本人、
+ * 今天沒有已核准的提前下班、已完成綁定。用來判斷申請送出時人數夠不夠。
+ * ctx: {me: shift, fromMin, toMin, todayShifts: [shift], approvedEmpIds: [id], boundEmpIds: [id]}
  */
 function eligibleColleagues(ctx) {
   return ctx.todayShifts.filter(function (s) {
     return s.empId !== ctx.me.empId &&
-           sameShift(s, ctx.me) &&
+           isWorking(s) && s.start < ctx.toMin && s.end > ctx.fromMin &&
            ctx.approvedEmpIds.indexOf(s.empId) < 0 &&
            ctx.boundEmpIds.indexOf(s.empId) >= 0;
   }).map(function (s) { return s.empId; });
@@ -71,8 +72,8 @@ function checkCanApply(ctx) {
   if (ctx.eligibleCount < ctx.threshold) {
     return {
       ok: false,
-      reason: '同一班目前可以同意的同仁只有 ' + ctx.eligibleCount + ' 位，未達 ' + ctx.threshold +
-              ' 人門檻，請直接詢問主管。'
+      reason: '接下來 ' + ctx.windowMin + ' 分鐘內在班、可以同意的同仁只有 ' + ctx.eligibleCount +
+              ' 位，未達 ' + ctx.threshold + ' 人門檻，請直接詢問主管。'
     };
   }
   return { ok: true };
@@ -84,17 +85,20 @@ function computeExpiry(createdMs, timeoutMin, shiftEndMs) {
 }
 
 /**
- * 某人點「同意」或「通知主管」時，是否有資格。
- * ctx: {request, voter: shift|null, voterEmpId, voterApprovedToday: bool}
- * request 需有 empId, baseStart, baseEnd。
+ * 某人點「同意」或「通知主管」時，是否有資格：按下的那一刻正在上班（不限同一班別）。
+ * ctx: {request, voter: 申請日當天的班表|null, voterEmpId, voterApprovedToday: bool, now}
  * 回傳 {ok: true} 或 {ok: false, reason}
  */
 function checkColleague(ctx) {
-  var r = ctx.request;
+  var r = ctx.request, v = ctx.voter, now = ctx.now;
   if (ctx.voterEmpId === r.empId) return { ok: false, reason: '您是申請人本人，無法操作。' };
-  if (!isWorking(ctx.voter)) return { ok: false, reason: '您今天休假或沒有排班，無法操作。' };
-  if (!sameShift(ctx.voter, { start: r.start, end: r.end, baseStart: r.baseStart, baseEnd: r.baseEnd })) {
-    return { ok: false, reason: '您今天不在這一班，無法操作。' };
+  if (!isWorking(v)) return { ok: false, reason: '您今天休假或沒有排班，無法操作。' };
+  if (now.date !== r.date) return { ok: false, reason: '這是其他日期的申請，無法操作。' };
+  if (now.min < v.start) {
+    return { ok: false, reason: '您還沒到上班時間（' + minToHm(v.start) + '），無法操作。' };
+  }
+  if (now.min >= v.end) {
+    return { ok: false, reason: '您已過下班時間（' + minToHm(v.end) + '），無法操作。' };
   }
   if (ctx.voterApprovedToday) return { ok: false, reason: '您今天已核准提前下班，無法操作。' };
   return { ok: true };

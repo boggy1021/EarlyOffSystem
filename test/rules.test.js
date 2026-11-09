@@ -19,11 +19,27 @@ const today = [
 ];
 const bound = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-test('可同意的同仁：同班、非本人、未核准、已綁定；▲ 開門班算同一班', () => {
-  const ids = g.eligibleColleagues({ me: today[0], todayShifts: today, approvedEmpIds: ['C'], boundEmpIds: bound });
+test('可同意的同仁：申請有效期間內有上班、非本人、未核准、已綁定（不限班別）', () => {
+  const win = (from, to) => ({ fromMin: H(from), toMin: H(to) });
+  // 15:00–15:30：B、C、D（7-5）在班；E（7-3）14:50 已下班；F 休假
+  let ids = g.eligibleColleagues({ me: today[0], ...win('15:00', '15:30'), todayShifts: today, approvedEmpIds: ['C'], boundEmpIds: bound });
   assert.deepEqual([...ids], ['B', 'D']);
-  const ids2 = g.eligibleColleagues({ me: today[0], todayShifts: today, approvedEmpIds: [], boundEmpIds: ['A', 'B'] });
-  assert.deepEqual([...ids2], ['B']);
+  ids = g.eligibleColleagues({ me: today[0], ...win('15:00', '15:30'), todayShifts: today, approvedEmpIds: [], boundEmpIds: ['A', 'B'] });
+  assert.deepEqual([...ids], ['B']);
+  // 14:30–15:00：7-3 的 E 還在班，也算
+  ids = g.eligibleColleagues({ me: today[0], ...win('14:30', '15:00'), todayShifts: today, approvedEmpIds: [], boundEmpIds: bound });
+  assert.deepEqual([...ids], ['B', 'C', 'D', 'E']);
+});
+
+test('只有一位 7-5：和 E 班重疊的時段，E 班同仁可以同意', () => {
+  const day = [shift('A', '7-5'), shift('N1', 'E'), shift('N2', 'E'), shift('M', "10'-7'")];
+  const ctx = (from, to) => ({ me: day[0], fromMin: H(from), toMin: H(to), todayShifts: day,
+    approvedEmpIds: [], boundEmpIds: ['A', 'N1', 'N2', 'M'] });
+  assert.deepEqual([...g.eligibleColleagues(ctx('15:00', '15:30'))], ['N1', 'N2', 'M']);
+  // 14:00 申請、14:30 失效：E 班 14:30 才上班，不算（[from, to) 不含 14:30）
+  assert.deepEqual([...g.eligibleColleagues(ctx('14:00', '14:30'))], ['M']);
+  // 14:10 申請、14:40 失效：E 班會在有效期間內上班，算
+  assert.deepEqual([...g.eligibleColleagues(ctx('14:10', '14:40'))], ['N1', 'N2', 'M']);
 });
 
 test('申請時段與重複申請', () => {
@@ -49,17 +65,23 @@ test('失效時間不晚於表定下班', () => {
 
 const req = (status = S.PENDING, extra = {}) => ({ empId: 'A', date: '2026-11-10', status, ...today[0], ...extra, empId: 'A' });
 
-test('誰的同意算數', () => {
+test('誰的同意算數：按下的那一刻正在上班', () => {
   const r = req();
-  const chk = (voterEmpId, voter, approved = false) =>
-    g.checkColleague({ request: r, voter, voterEmpId, voterApprovedToday: approved });
-  assert.match(chk('A', today[0]).reason, /本人/);
-  assert.match(chk('F', today[5]).reason, /休假/);
-  assert.match(chk('X', null).reason, /休假/);
-  assert.match(chk('E', today[4]).reason, /不在這一班/);
-  assert.match(chk('C', today[2], true).reason, /已核准/);
-  assert.equal(chk('B', today[1]).ok, true);
-  assert.equal(chk('D', today[3]).ok, true);
+  const chk = (voterEmpId, voter, at, approved = false, date) =>
+    g.checkColleague({ request: r, voter, voterEmpId, voterApprovedToday: approved, now: now(at, date) });
+  assert.match(chk('A', today[0], '15:00').reason, /本人/);
+  assert.match(chk('F', today[5], '15:00').reason, /休假/);
+  assert.match(chk('X', null, '15:00').reason, /休假/);
+  assert.match(chk('E', today[4], '15:00').reason, /已過下班時間（14:50）/);   // 7-3 已下班
+  assert.equal(chk('E', today[4], '14:40').ok, true);                          // 7-3 還在班：不同班別也算
+  assert.match(chk('C', today[2], '15:00', true).reason, /已核准/);
+  assert.equal(chk('B', today[1], '15:00').ok, true);
+  assert.equal(chk('D', today[3], '15:00').ok, true);
+  assert.equal(chk('D', today[3], '16:45').ok, false);                         // ▲ 開門班 16:45 下班
+  assert.match(chk('B', today[1], '09:00', false, '2026-11-11').reason, /其他日期/);
+  const e = { empId: 'N', start: H('14:30'), end: H('22:00') };
+  assert.match(chk('N', e, '14:20').reason, /還沒到上班時間（14:30）/);
+  assert.equal(chk('N', e, '14:30').ok, true);
 });
 
 test('滿 2 票核准；重複點不計', () => {

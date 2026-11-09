@@ -24,7 +24,13 @@ function verifyIdToken_(idToken) {
     muteHttpExceptions: true
   });
   if (res.getResponseCode() !== 200) {
-    throw apiError_('TOKEN', '登入已過期，請重新開啟。');
+    var desc = '';
+    try { desc = JSON.parse(res.getContentText()).error_description || ''; } catch (e) { /* 非 JSON */ }
+    console.warn('ID token 驗證失敗 ' + res.getResponseCode() + '：' + res.getContentText());
+    if (/expired/i.test(desc)) throw apiError_('TOKEN', '登入已過期，請重新開啟。');
+    // 其他原因多半是設定錯誤（例如 LOGIN_CHANNEL_ID 不是 LINE Login channel 的 ID），重新登入也沒用
+    throw apiError_('AUTH_CONFIG', '登入驗證失敗：' + (desc || res.getResponseCode()) +
+      '。請管理者確認「設定 LINE 金鑰」的 LINE Login Channel ID。');
   }
   var body = JSON.parse(res.getContentText());
   var who = { userId: body.sub, lineName: body.name || '' };
