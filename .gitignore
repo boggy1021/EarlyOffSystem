@@ -1,0 +1,8 @@
+node_modules/
+# 含人名的班表比對資料，不要提交
+test/fixtures/
+# clasp 本機登入憑證
+.clasprc.json
+# 金鑰檔，絕對不要提交
+LINE API.txt
+*.secret.txt
