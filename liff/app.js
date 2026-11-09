@@ -130,7 +130,7 @@
         requestCard(req),
         ok ? h('p', { class: 'muted' }, '核准時會收到官方帳號的通知；也可以在「我的申請」查看進度。') : null,
         !ok ? h('button', { onclick: function () { share(flex, groupName, shareResult(req, flex, groupName)); } },
-          '分享到「' + groupName + '」') : null,
+          '分享到「' + groupName + '」群組') : null,
         closeButton());
     };
   }
@@ -155,7 +155,7 @@
         return render(parts);
       }
       parts.push(h('div', { class: 'card' },
-        h('p', null, '送出後請選擇「', h('b', null, d.groupName), '」，把申請卡片分享到群組。'),
+        h('p', null, '送出後請選擇「', h('b', null, d.groupName), '」群組，把申請卡片分享出去。'),
         h('p', { class: 'muted' }, '接下來在班、可以同意的同仁 ' + d.eligibleCount + ' 位，需要 ' + d.threshold +
           ' 位同意；' + d.timeoutMin + ' 分鐘內未達門檻會自動失效。')));
       var btn = h('button', {
