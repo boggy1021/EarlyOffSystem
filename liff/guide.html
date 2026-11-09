@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>提前下班 圖解小手冊</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* 版面：手機優先的單欄長頁，每個步驟配一支「手機畫面」插圖；大螢幕時圖文左右並排 */
+:root {
+  --bg: #f4faf6;
+  --paper: #ffffff;
+  --ink: #1d2a24;
+  --soft: #5b6b63;
+  --line: #d7e6dd;
+  --green: #06c755;
+  --green-deep: #04994a;
+  --green-wash: #dff6e8;
+  --peach: #ff9f6e;
+  --peach-wash: #ffe9dd;
+  --sky: #5aa9f0;
+  --sky-wash: #e2f0fd;
+  --no: #c9cfcc;
+  --phone: #26332d;
+  --screen: #eef3f0;
+  --font-display: "Huninn", "jf open 粉圓", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111916; --paper: #1a2420; --ink: #e8f1ec; --soft: #a3b3ab; --line: #2e3d36;
+    --green: #2fd877; --green-deep: #5fe69a; --green-wash: #183a27;
+    --peach: #ffb08a; --peach-wash: #3d2a20; --sky: #7dbcf5; --sky-wash: #1b2d40;
+    --no: #4a5651; --phone: #05080a; --screen: #202b26;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111916; --paper: #1a2420; --ink: #e8f1ec; --soft: #a3b3ab; --line: #2e3d36;
+  --green: #2fd877; --green-deep: #5fe69a; --green-wash: #183a27;
+  --peach: #ffb08a; --peach-wash: #3d2a20; --sky: #7dbcf5; --sky-wash: #1b2d40;
+  --no: #4a5651; --phone: #05080a; --screen: #202b26;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.75 var(--font-body);
+}
+.wrap {
+  max-width: 920px;
+  margin: 0 auto;
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid;
+  gap: 56px;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; text-wrap: balance; margin: 0; line-height: 1.35; }
+h1 { font-size: clamp(30px, 7vw, 46px); }
+h2 { font-size: clamp(24px, 5vw, 30px); }
+h3 { font-size: 19px; }
+p { margin: 0; }
+.soft { color: var(--soft); }
+.tag {
+  display: inline-block; font-family: var(--font-display);
+  background: var(--green-wash); color: var(--green-deep);
+  padding: 2px 12px; border-radius: 999px; font-size: 14px; letter-spacing: .04em;
+}
+
+/* ── 開頭 ── */
+.hero { display: grid; gap: 24px; align-items: center; }
+.hero .lead { font-size: 18px; max-width: 34em; }
+.hero .lead b { color: var(--green-deep); }
+@media (min-width: 760px) { .hero { grid-template-columns: 1.2fr 1fr; } }
+
+/* ── 三個重點 ── */
+.facts { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.fact {
+  background: var(--paper); border: 2px solid var(--line); border-radius: 22px;
+  padding: 18px 20px; display: grid; grid-template-columns: 56px 1fr; gap: 14px; align-items: center;
+}
+.fact .big { font-family: var(--font-display); font-size: 34px; line-height: 1; color: var(--green-deep); text-align: center; }
+.fact .big small { display: block; font-size: 14px; margin-top: 4px; }
+.fact:nth-child(2) .big { color: var(--peach); }
+.fact:nth-child(3) .big { color: var(--sky); }
+.fact p { font-size: 15px; }
+.fact b { font-size: 16px; display: block; }
+
+/* ── 段落與步驟 ── */
+section { display: grid; gap: 22px; }
+.sec-head { display: grid; gap: 6px; }
+.steps { display: grid; gap: 18px; }
+.step {
+  display: grid; gap: 16px; align-items: center;
+  background: var(--paper); border-radius: 26px; padding: 20px;
+  border: 2px solid var(--line);
+}
+@media (min-width: 680px) { .step { grid-template-columns: 1fr 250px; } }
+.step .txt { display: grid; gap: 8px; min-width: 0; }
+.num {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--green); color: #fff; font-family: var(--font-display); font-size: 20px;
+  display: grid; place-items: center;
+}
+.step .txt p b { color: var(--green-deep); }
+.note {
+  background: var(--peach-wash); border-radius: 16px; padding: 12px 16px; font-size: 15px;
+}
+
+/* ── 手機插圖 ── */
+.phone {
+  width: 230px; max-width: 100%; justify-self: center;
+  background: var(--phone); border-radius: 30px; padding: 10px;
+}
+.screen {
+  background: var(--screen); border-radius: 22px; overflow: hidden;
+  display: grid; align-content: start; min-height: 300px; font-size: 13px; line-height: 1.5;
+}
+.bar { background: var(--green); color: #fff; padding: 10px 14px; font-weight: 700; font-size: 13px; }
+.bar.group { background: #3d6ea8; }
+.chat { padding: 12px; display: grid; gap: 10px; align-content: start; }
+.bubble { background: var(--paper); color: var(--ink); border-radius: 14px 14px 14px 4px; padding: 8px 11px; max-width: 92%; }
+.bubble.me { justify-self: end; background: #a8e6b8; color: #10301c; border-radius: 14px 14px 4px 14px; }
+.who { font-size: 11px; color: var(--soft); margin-bottom: -6px; }
+.menu { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); font-family: var(--font-display); font-size: 12px; text-align: center; }
+.menu div { padding: 14px 4px; background: var(--paper); color: var(--ink); border-top: 1px solid var(--line); }
+.menu div:first-child { background: var(--green); color: #fff; }
+.menu .hit { outline: 3px solid var(--peach); outline-offset: -3px; border-radius: 6px; }
+.card { background: var(--paper); color: var(--ink); border-radius: 14px; overflow: hidden; width: 88%; }
+.card .in { padding: 10px 12px; display: grid; gap: 2px; }
+.card .k { color: #06a64a; font-weight: 700; font-size: 11px; }
+.card .name { font-family: var(--font-display); font-size: 18px; }
+.card .row { display: flex; justify-content: space-between; color: var(--soft); font-size: 11.5px; }
+.card .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 10px 10px; }
+.card .btns span { text-align: center; border-radius: 8px; padding: 5px 0; font-weight: 700; font-size: 12px; }
+.card .ok { background: var(--green); color: #fff; }
+.card .boss { background: var(--line); color: var(--ink); }
+.card .btns .hit { outline: 3px solid var(--peach); outline-offset: 1px; }
+.liff { padding: 14px; display: grid; gap: 10px; align-content: start; }
+.liff .t { font-family: var(--font-display); font-size: 17px; }
+.liff .box { background: var(--paper); border-radius: 12px; padding: 10px 12px; display: grid; gap: 4px; }
+.liff .sel { border: 1.5px solid var(--line); border-radius: 8px; padding: 6px 8px; display: flex; justify-content: space-between; }
+.liff .go { background: var(--green); color: #fff; border-radius: 10px; text-align: center; padding: 9px; font-weight: 700; }
+.liff .warn { background: var(--peach-wash); border-radius: 10px; padding: 8px 10px; }
+.liff .okmsg { background: var(--green-wash); color: var(--ink); border-radius: 10px; padding: 8px 10px; }
+.prog { height: 7px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.prog i { display: block; height: 100%; width: 50%; background: var(--green); }
+.picker { padding: 12px; display: grid; gap: 8px; }
+.picker .g { display: flex; gap: 10px; align-items: center; background: var(--paper); border-radius: 12px; padding: 8px 10px; }
+.picker .g.hit { outline: 3px solid var(--peach); }
+.av { width: 30px; height: 30px; border-radius: 50%; background: var(--sky-wash); display: grid; place-items: center; font-size: 13px; color: var(--sky); font-weight: 700; flex: none; }
+
+/* ── 兩個按鈕 ── */
+.duo { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.choice { border-radius: 24px; padding: 20px; display: grid; gap: 10px; align-content: start; }
+.choice.agree { background: var(--green-wash); }
+.choice.boss { background: var(--sky-wash); }
+.choice .btnlook {
+  justify-self: start; font-family: var(--font-display); font-size: 18px;
+  padding: 6px 22px; border-radius: 12px; color: #fff;
+}
+.choice.agree .btnlook { background: var(--green); }
+.choice.boss .btnlook { background: #3d6ea8; }
+.choice ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+
+/* ── 誰的同意算數：班別時間軸 ── */
+.timeline { background: var(--paper); border: 2px solid var(--line); border-radius: 26px; padding: 20px; display: grid; gap: 14px; overflow-x: auto; }
+.tl { position: relative; display: grid; gap: 10px; min-width: 520px; padding-bottom: 22px; }
+.tl-axis { position: relative; height: 22px; margin-left: 120px; font-size: 12px; color: var(--soft); font-variant-numeric: tabular-nums; }
+.tl-axis span { position: absolute; transform: translateX(-50%); }
+.tl-row { display: grid; grid-template-columns: 120px 1fr; align-items: center; min-height: 34px; }
+.tl-row .lab { font-size: 14px; line-height: 1.3; padding-right: 8px; }
+.tl-row .lab small { display: block; color: var(--soft); font-size: 12px; }
+.tl-track { position: relative; height: 26px; }
+.tl-bar { position: absolute; top: 3px; height: 20px; border-radius: 10px; }
+.tl-bar.me { background: var(--peach); }
+.tl-bar.yes { background: var(--green); }
+.tl-bar.no { background: var(--no); }
+.tl-mark { position: absolute; right: -2px; top: 50%; transform: translate(100%, -50%); font-weight: 700; padding-left: 8px; font-size: 14px; }
+.tl-mark.y { color: var(--green-deep); }
+.tl-mark.n { color: var(--soft); }
+.tl-now { position: absolute; top: 0; bottom: 0; left: calc(120px + (100% - 120px) * .5269); border-left: 2px dashed var(--peach); pointer-events: none; }
+.tl-now span { position: absolute; bottom: 0; left: 6px; font-size: 12px; color: var(--peach); font-weight: 700; white-space: nowrap; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; }
+.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -2px; margin-right: 6px; }
+.rules { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.rule { background: var(--paper); border-radius: 20px; padding: 16px 18px; border: 2px solid var(--line); }
+.rule h3 { margin-bottom: 6px; }
+.rule.y h3 { color: var(--green-deep); }
+.rule ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; font-size: 15px; }
+
+/* ── 常見問題 ── */
+.faq { display: grid; gap: 10px; }
+details { background: var(--paper); border: 2px solid var(--line); border-radius: 18px; padding: 4px 18px; }
+summary { cursor: pointer; padding: 12px 0; font-weight: 700; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: "+"; font-family: var(--font-display); color: var(--green-deep); font-size: 20px; line-height: 1; width: 14px; flex: none; }
+details[open] summary::before { content: "−"; }
+details p { padding: 0 0 14px 24px; color: var(--soft); }
+summary:focus-visible, a:focus-visible { outline: 3px solid var(--sky); outline-offset: 3px; border-radius: 6px; }
+
+.end {
+  text-align: center; display: grid; gap: 8px; justify-items: center;
+  background: var(--green-wash); border-radius: 28px; padding: 28px 20px;
+}
+.end h2 { color: var(--green-deep); }
+@media (prefers-reduced-motion: no-preference) {
+  .hero .phone { animation: bob 4s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-6px); } }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div style="display:grid;gap:16px">
+      <span class="tag">護理師專用・LINE 小幫手</span>
+      <h1>工作做完了？<br>用 LINE 申請提前下班</h1>
+      <p class="lead">按一下送出，<b>2 位會留守的同事</b>點「同意」就核准，官方帳號會通知你。整個流程不用找人簽名，也不用排隊問。</p>
+    </div>
+    <div class="phone" aria-hidden="true">
+      <div class="screen">
+        <div class="bar">員工官方帳號</div>
+        <div class="chat">
+          <div class="bubble">✅ 您的提前下班申請已核准（16:05），可以下班了。<br><span class="soft" style="font-size:11px">正式下班時間仍以打卡為準。</span></div>
+          <div class="bubble me">謝謝大家 🙏</div>
+        </div>
+        <div class="menu"><div>我想提前下班</div><div>我的申請</div><div>綁定</div></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="facts">
+    <div class="fact"><div class="big">2<small>人</small></div><p><b>2 位同事同意</b>正在上班、而且會留到你表定下班的同事</p></div>
+    <div class="fact"><div class="big">30<small>分鐘</small></div><p><b>30 分鐘內有效</b>沒湊滿 2 人就自動失效，晚點可以再申請</p></div>
+    <div class="fact"><div class="big" style="font-size:24px">打卡<small>為準</small></div><p><b>以打卡為準</b>系統只留核准紀錄，提前下班不扣薪</p></div>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <span class="tag">只要做一次</span>
+      <h2>第一次使用：加好友、綁定名字</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="txt">
+          <div class="num">1</div>
+          <h3>加入員工官方帳號</h3>
+          <p>點管理者給的連結或掃 QR Code 加好友。聊天室下方會出現三個大按鈕，點最右邊的<b>「綁定」</b>。</p>
+        </div>
+        <div class="phone" aria-hidden="true">
+          <div class="screen" style="min-height:220px">
+            <div class="bar">員工官方帳號</div>
+            <div class="chat"><div class="bubble">歡迎使用提前下班申請。第一次使用請先點下方選單的「綁定」…</div></div>
+            <div class="menu"><div>我想提前下班</div><div>我的申請</div><div class="hit">綁定</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="txt">
+          <div class="num">2</div>
+          <h3>選自己的名字，按送出</h3>
+          <p>第一次打開會問能不能使用你的 LINE 資料，按<b>「許可」</b>。接著在清單裡選自己的名字。</p>
+          <p class="note">清單裡找不到自己，或名字已經被選走了？請找管理者。</p>
+        </div>
+        <div class="phone" aria-hidden="true">
+          <div class="screen" style="min-height:240px">
+            <div class="liff">
+              <div class="t">綁定員工身分</div>
+              <div class="box"><span class="soft">我的名字</span><div class="sel"><span>王小美</span><span>▾</span></div></div>
+              <div class="go">送出</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="txt">
+          <div class="num">3</div>
+          <h3>等管理者確認</h3>
+          <p>管理者會核對是不是本人。確認後就能開始用了，之後都不用再綁定。</p>
+        </div>
+        <div class="phone" aria-hidden="true">
+          <div class="screen" style="min-height:180px">
+            <div class="liff"><div class="warn">您已申請綁定為「王小美」，等待管理者確認。</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="tag">上班時間內都可以</span>
+      <h2>我想提前下班</h2>
+      <p class="soft">從自己的上班時間開始，到表定下班時間之前，都可以申請。</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="txt">
+          <div class="num">1</div>
+          <h3>點「我想提前下班」→ 送出申請</h3>
+          <p>畫面會顯示你今天的班別，以及接下來有幾位同事可以同意。確認沒問題就按<b>「送出申請」</b>。</p>
+        </div>
+        <div class="phone" aria-hidden="true">
+          <div class="screen" style="min-height:250px">
+            <div class="liff">
+              <div class="t">我想提前下班</div>
+              <div class="box"><div style="display:flex;justify-content:space-between"><span class="soft">今天班別</span><span>06:50–16:50</span></div></div>
+              <div class="box soft" style="font-size:12px">接下來在班、可以同意的同仁 4 位，需要 2 位同意。</div>
+              <div class="go">送出申請</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="txt">
+          <div class="num">2</div>
+          <h3>選「淨新洗腎室」群組分享</h3>
+          <p>LINE 會跳出選聊天室的畫面，選<b>「淨新洗腎室」群組</b>再按傳送。群組裡就會出現一張由你發出的申請卡片。</p>
+          <p class="note">不小心關掉、沒選到群組？到「我的申請」按「重新分享到群組」就好。</p>
+        </div>
+        <div class="phone" aria-hidden="true">
+          <div class="screen" style="min-height:220px">
+            <div class="bar" style="background:var(--phone)">選擇傳送對象</div>
+            <div class="picker">
+              <div class="g hit"><div class="av">淨</div><span>淨新洗腎室</span></div>
+              <div class="g"><div class="av">家</div><span>家人</span></div>
+              <div class="g"><div class="av">友</div><span>大學同學</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="txt">
+          <div class="num">3</div>
+          <h3>等同事按同意，收到通知就能走</h3>
+          <p>滿 2 位同意時，官方帳號會傳<b>「✅ 已核准，可以下班了」</b>給你。想看進度、或決定不走了，點<b>「我的申請」</b>可以查看或取消。</p>
+        </div>
+        <div class="phone" aria-hidden="true">
+          <div class="screen" style="min-height:250px">
+            <div class="bar group">淨新洗腎室</div>
+            <div class="chat">
+              <div class="who">王小美</div>
+              <div class="card">
+                <div class="in">
+                  <span class="k">提前下班申請</span>
+                  <span class="name">王小美</span>
+                  <span class="row"><span>班別</span><span>06:50–16:50</span></span>
+                  <span class="row"><span>申請時間</span><span>15:40</span></span>
+                </div>
+                <div class="btns"><span class="ok">同意</span><span class="boss">通知主管</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="tag">看到同事的卡片時</span>
+      <h2>卡片上有兩個按鈕</h2>
+      <p class="soft">沒有「拒絕」按鈕。不同意的話，不按就好。</p>
+    </div>
+    <div class="duo">
+      <div class="choice agree">
+        <span class="btnlook">同意</span>
+        <ul>
+          <li>按下去就記一票，畫面會顯示目前進度，例如「已同意 1／2」。</li>
+          <li>不算數的時候，畫面會告訴你原因。</li>
+        </ul>
+      </div>
+      <div class="choice boss">
+        <span class="btnlook">通知主管</span>
+        <ul>
+          <li>覺得現在人手不夠、不適合讓同事先走時使用，可以寫一句原因。</li>
+          <li>按下後申請暫停，改由主管決定「准」或「不准」。</li>
+          <li><b>申請人看不到是誰按的</b>，只有主管看得到。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="tag">誰的同意算數</span>
+      <h2>要「正在上班」，而且「會留下來」</h2>
+      <p class="soft">例子：小美上 7-5，下午 14:40 申請提前下班。這時候誰按同意才算？</p>
+    </div>
+    <div class="timeline" role="img" aria-label="14:40 申請時，7-5、開門班、11-5、E 班的同事可以同意；7-3 的同事 14:50 就下班，不算">
+      <div class="tl">
+        <div class="tl-axis" aria-hidden="true">
+          <span style="left:3.23%">07</span><span style="left:22.58%">10</span><span style="left:41.94%">13</span><span style="left:61.29%">16</span><span style="left:80.65%">19</span><span style="left:96%">22 時</span>
+        </div>
+        <div class="tl-row"><div class="lab">小美<small>7-5・申請人</small></div><div class="tl-track"><div class="tl-bar me" style="left:2.15%;width:64.52%"></div></div></div>
+        <div class="tl-row"><div class="lab">同事 A<small>7-5</small></div><div class="tl-track"><div class="tl-bar yes" style="left:2.15%;width:64.52%"><span class="tl-mark y">✓</span></div></div></div>
+        <div class="tl-row"><div class="lab">同事 B<small>▲7-5 開門</small></div><div class="tl-track"><div class="tl-bar yes" style="left:1.61%;width:64.52%"><span class="tl-mark y">✓</span></div></div></div>
+        <div class="tl-row"><div class="lab">同事 C<small>11-5</small></div><div class="tl-track"><div class="tl-bar yes" style="left:29.03%;width:38.71%"><span class="tl-mark y">✓</span></div></div></div>
+        <div class="tl-row"><div class="lab">同事 D<small>E 班</small></div><div class="tl-track"><div class="tl-bar yes" style="left:51.61%;width:48.39%"><span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#fff;font-weight:700;font-size:14px">✓</span></div></div></div>
+        <div class="tl-row"><div class="lab">同事 E<small>7-3</small></div><div class="tl-track"><div class="tl-bar no" style="left:2.15%;width:51.61%"><span class="tl-mark n">✗ 14:50 就下班</span></div></div></div>
+        <div class="tl-now" aria-hidden="true"><span>14:40 申請</span></div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--peach)"></i>申請人</span>
+        <span><i style="background:var(--green)"></i>可以同意</span>
+        <span><i style="background:var(--no)"></i>不算</span>
+      </div>
+    </div>
+    <div class="rules">
+      <div class="rule y">
+        <h3>算</h3>
+        <ul>
+          <li>按下時正在上班的同事，不分班別、不分五六樓</li>
+          <li>表定下班不比申請人早超過 15 分鐘（11-5 遇到 7-5 也算）</li>
+          <li>開門班和同班別的人一樣算</li>
+        </ul>
+      </div>
+      <div class="rule">
+        <h3>不算</h3>
+        <ul>
+          <li>申請人自己</li>
+          <li>還沒上班、已經下班、今天休假的人</li>
+          <li>比申請人早下班的人，例如 7-3 不能同意 7-5</li>
+          <li>自己今天已經核准提前下班的人</li>
+          <li>同一個人按第二次</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="tag">遇到狀況</span>
+      <h2>常見問題</h2>
+    </div>
+    <div class="faq">
+      <details><summary>顯示「您今天沒有排班」</summary><p>班表上沒有你今天的班。臨時調班的話，請找管理者更新班表。</p></details>
+      <details><summary>顯示「還沒到上班時間」或「已過表定下班時間」</summary><p>只能在自己的上班時段內申請。</p></details>
+      <details><summary>顯示「可以同意的同仁只有 1 位」</summary><p>接下來在班、會留守的同事不到 2 位，系統沒辦法核准，請直接問主管。</p></details>
+      <details><summary>顯示「您已經有一筆進行中的申請」</summary><p>同一時間只能有一筆。到「我的申請」查看進度，或先取消再重新申請。</p></details>
+      <details><summary>30 分鐘到了還沒湊滿 2 人</summary><p>申請會自動失效，不會另外通知。晚一點可以再申請一次。</p></details>
+      <details><summary>我的申請被「通知主管」了</summary><p>等主管決定，結果會由官方帳號通知你。你看不到是誰按的。</p></details>
+      <details><summary>一直沒收到核准通知</summary><p>到「我的申請」看狀態，也確認自己沒有封鎖員工官方帳號。</p></details>
+      <details><summary>畫面出現「登入已過期」</summary><p>關掉小網頁，再從下方選單重新打開。</p></details>
+    </div>
+  </section>
+
+  <footer class="end">
+    <h2>有問題，截圖給管理者</h2>
+    <p class="soft">畫面出現錯誤訊息或怪怪的地方，截圖傳給管理者就好。</p>
+  </footer>
+
+</div>
+
+</body>
+</html>

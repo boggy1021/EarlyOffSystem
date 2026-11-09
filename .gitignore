@@ -6,3 +6,5 @@ test/fixtures/
 # 金鑰檔，絕對不要提交
 LINE API.txt
 *.secret.txt
+# 產生的 PDF（不提交）
+output/
