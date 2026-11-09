@@ -61,6 +61,7 @@ var DECISION = { OK: '准', NO: '不准' };
 var SETTING_DEFAULTS = [
   ['同意門檻', 2, '需要幾位在班同仁同意'],
   ['逾時分鐘', 30, '未達門檻的申請幾分鐘後失效（不會晚於表定下班）'],
+  ['留守寬容分鐘', 15, '同意者的表定下班最多可以比申請人早幾分鐘（例如 11-5 申請時 7-5 仍可同意）'],
   ['群組名稱', '護理師大群組', '申請頁提示要分享到哪個群組'],
   ['班表檔案ID', '', 'Google Drive 上排班表 xlsx 的檔案 ID 或網址（匯入班表時會自動更新）']
 ];
@@ -186,6 +187,7 @@ function settings_() {
   return {
     threshold: parseInt(out['同意門檻'], 10) || 2,
     timeoutMin: parseInt(out['逾時分鐘'], 10) || 30,
+    toleranceMin: isNaN(parseInt(out['留守寬容分鐘'], 10)) ? 15 : parseInt(out['留守寬容分鐘'], 10),
     groupName: String(out['群組名稱'] || ''),
     scheduleFileId: String(out['班表檔案ID'] || '')
   };

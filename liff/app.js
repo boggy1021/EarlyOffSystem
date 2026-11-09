@@ -301,11 +301,10 @@
       }
       var sel = h('select', null, h('option', { value: '' }, '請選擇'),
         d.options.map(function (o) { return h('option', { value: o.empId }, o.name); }));
-      var input = h('input', { placeholder: '或輸入員工編號' });
       var btn = h('button', {
         onclick: function () {
-          var v = input.value.trim() || sel.value;
-          if (!v) return alert('請選擇您的名字或輸入員工編號。');
+          var v = sel.value;
+          if (!v) return alert('請選擇您的名字。');
           btn.disabled = true;
           api('bind', { empIdOrName: v }).then(function (x) {
             render(msg('ok', '已送出綁定「' + x.bindName + '」，等待管理者確認後即可使用。'), closeButton());
@@ -315,7 +314,8 @@
       render(
         h('h1', null, '綁定員工身分'),
         d.bindStatus === '待確認' ? msg('warn', '目前申請綁定為「' + d.bindName + '」，等待確認中；可以重新選擇。') : null,
-        h('div', { class: 'card' }, h('label', null, '我的名字'), sel, h('label', null, '員工編號'), input),
+        h('div', { class: 'card' }, h('label', null, '我的名字'), sel,
+          h('p', { class: 'muted' }, '清單裡找不到自己的名字，或名字已被選走，請找管理者。')),
         btn);
     });
   };

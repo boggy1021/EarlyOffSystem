@@ -36,15 +36,27 @@ function onDutyAt(shift, min) {
   return isWorking(shift) && shift.start <= min && min < shift.end;
 }
 
+/** 比較下班時間用沒有 ▲ 提早的時段（開門班和同班別視為同時下班）。 */
+function baseEndOf(s) {
+  return (s.baseEnd === null || s.baseEnd === undefined || s.baseEnd === '') ? s.end : s.baseEnd;
+}
+
+/** 會不會留守：同意者的表定下班，不早於申請人表定下班前 toleranceMin 分鐘。 */
+function staysUntilApplicantEnd(voter, applicant, toleranceMin) {
+  return baseEndOf(voter) >= baseEndOf(applicant) - (toleranceMin || 0);
+}
+
 /**
- * 這筆申請有效期間內「可以同意」的同仁編號：在 [fromMin, toMin) 期間有上班、不是本人、
- * 今天沒有已核准的提前下班、已完成綁定。用來判斷申請送出時人數夠不夠。
- * ctx: {me: shift, fromMin, toMin, todayShifts: [shift], approvedEmpIds: [id], boundEmpIds: [id]}
+ * 這筆申請有效期間內「可以同意」的同仁編號：在 [fromMin, toMin) 期間有上班、會留守到申請人
+ * 表定下班（容許 toleranceMin）、不是本人、今天沒有已核准的提前下班、已完成綁定。
+ * 用來判斷申請送出時人數夠不夠。
+ * ctx: {me: shift, fromMin, toMin, toleranceMin, todayShifts: [shift], approvedEmpIds: [id], boundEmpIds: [id]}
  */
 function eligibleColleagues(ctx) {
   return ctx.todayShifts.filter(function (s) {
     return s.empId !== ctx.me.empId &&
            isWorking(s) && s.start < ctx.toMin && s.end > ctx.fromMin &&
+           staysUntilApplicantEnd(s, ctx.me, ctx.toleranceMin) &&
            ctx.approvedEmpIds.indexOf(s.empId) < 0 &&
            ctx.boundEmpIds.indexOf(s.empId) >= 0;
   }).map(function (s) { return s.empId; });
@@ -72,7 +84,7 @@ function checkCanApply(ctx) {
   if (ctx.eligibleCount < ctx.threshold) {
     return {
       ok: false,
-      reason: '接下來 ' + ctx.windowMin + ' 分鐘內在班、可以同意的同仁只有 ' + ctx.eligibleCount +
+      reason: '接下來 ' + ctx.windowMin + ' 分鐘內在班、會留到您表定下班的同仁只有 ' + ctx.eligibleCount +
               ' 位，未達 ' + ctx.threshold + ' 人門檻，請直接詢問主管。'
     };
   }
@@ -85,8 +97,9 @@ function computeExpiry(createdMs, timeoutMin, shiftEndMs) {
 }
 
 /**
- * 某人點「同意」或「通知主管」時，是否有資格：按下的那一刻正在上班（不限同一班別）。
- * ctx: {request, voter: 申請日當天的班表|null, voterEmpId, voterApprovedToday: bool, now}
+ * 某人點「同意」或「通知主管」時，是否有資格：按下的那一刻正在上班（不限同一班別），
+ * 而且表定下班不早於申請人表定下班前 toleranceMin 分鐘（會留守的人才算）。
+ * ctx: {request, voter: 申請日當天的班表|null, voterEmpId, voterApprovedToday: bool, now, toleranceMin}
  * 回傳 {ok: true} 或 {ok: false, reason}
  */
 function checkColleague(ctx) {
@@ -99,6 +112,10 @@ function checkColleague(ctx) {
   }
   if (now.min >= v.end) {
     return { ok: false, reason: '您已過下班時間（' + minToHm(v.end) + '），無法操作。' };
+  }
+  if (!staysUntilApplicantEnd(v, r, ctx.toleranceMin)) {
+    return { ok: false, reason: '您的表定下班時間（' + minToHm(baseEndOf(v)) + '）早於申請人（' +
+             minToHm(baseEndOf(r)) + '），只有會留守的同仁可以操作。' };
   }
   if (ctx.voterApprovedToday) return { ok: false, reason: '您今天已核准提前下班，無法操作。' };
   return { ok: true };

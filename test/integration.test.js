@@ -151,14 +151,17 @@ test('進行中被通報 → 之後的同意不會觸發核准；主管核准後
   assert.equal(r.code, 'DENIED');
 });
 
-test('不同班別但正在上班的同仁也能同意', () => {
+test('在班但比申請人早下班的同仁不算（不會留守）', () => {
   const { call, at, pushes } = setup();
   at('14:40');
   const me = call('uE1', 'me');
-  assert.equal(me.data.eligibleCount, 4);                 // 乙丙丁 + 7-3 的戊（14:50 才下班）
+  assert.equal(me.data.eligibleCount, 3);                 // 乙丙丁；7-3 的戊 14:50 就下班
   const id = call('uE1', 'apply').data.request.id;
-  assert.equal(call('uE5', 'agree', { id }).data.counted, true);   // 戊 7-3，還在班
-  const v = call('uE2', 'agree', { id });
+  const v5 = call('uE5', 'agree', { id });
+  assert.equal(v5.data.counted, false);
+  assert.match(v5.data.reason, /早於申請人/);
+  call('uE2', 'agree', { id });
+  const v = call('uE4', 'agree', { id });                 // 丁 ▲7-5：比較沒提早的下班時間，算
   assert.equal(v.data.request.status, '已核准');
   assert.equal(pushes.length, 1);
 });

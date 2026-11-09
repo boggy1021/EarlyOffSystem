@@ -98,7 +98,8 @@ function colleagueEligibility_(req, emp, now) {
     voter: myShiftOn_(emp.empId, req.date),
     voterEmpId: emp.empId,
     voterApprovedToday: approvedEmpIdsOn_(req.date).indexOf(emp.empId) >= 0,
-    now: now
+    now: now,
+    toleranceMin: settings_().toleranceMin
   });
 }
 
@@ -112,7 +113,7 @@ function applyContext_(emp, now, cfg) {
   // 申請有效期間 = 現在 ～ min(現在 + 逾時分鐘, 表定下班)；這段時間有上班的同仁都可能同意
   var toMin = me ? Math.min(now.min + cfg.timeoutMin, me.end) : now.min;
   var eligible = me ? eligibleColleagues({
-    me: me, fromMin: now.min, toMin: toMin, todayShifts: today,
+    me: me, fromMin: now.min, toMin: toMin, toleranceMin: cfg.toleranceMin, todayShifts: today,
     approvedEmpIds: approvedEmpIdsOn_(now.date, reqs), boundEmpIds: boundEmpIds_(emps)
   }) : [];
   var check = checkCanApply({

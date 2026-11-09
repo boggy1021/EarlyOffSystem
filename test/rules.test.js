@@ -19,21 +19,21 @@ const today = [
 ];
 const bound = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-test('可同意的同仁：申請有效期間內有上班、非本人、未核准、已綁定（不限班別）', () => {
-  const win = (from, to) => ({ fromMin: H(from), toMin: H(to) });
+test('可同意的同仁：有效期間內有上班、會留守、非本人、未核准、已綁定（不限班別）', () => {
+  const win = (from, to) => ({ fromMin: H(from), toMin: H(to), toleranceMin: 15 });
   // 15:00–15:30：B、C、D（7-5）在班；E（7-3）14:50 已下班；F 休假
   let ids = g.eligibleColleagues({ me: today[0], ...win('15:00', '15:30'), todayShifts: today, approvedEmpIds: ['C'], boundEmpIds: bound });
   assert.deepEqual([...ids], ['B', 'D']);
   ids = g.eligibleColleagues({ me: today[0], ...win('15:00', '15:30'), todayShifts: today, approvedEmpIds: [], boundEmpIds: ['A', 'B'] });
   assert.deepEqual([...ids], ['B']);
-  // 14:30–15:00：7-3 的 E 還在班，也算
+  // 14:30–15:00：7-3 的 E 雖然還在班，但 14:50 就下班，不會留守 → 不算
   ids = g.eligibleColleagues({ me: today[0], ...win('14:30', '15:00'), todayShifts: today, approvedEmpIds: [], boundEmpIds: bound });
-  assert.deepEqual([...ids], ['B', 'C', 'D', 'E']);
+  assert.deepEqual([...ids], ['B', 'C', 'D']);
 });
 
 test('只有一位 7-5：和 E 班重疊的時段，E 班同仁可以同意', () => {
   const day = [shift('A', '7-5'), shift('N1', 'E'), shift('N2', 'E'), shift('M', "10'-7'")];
-  const ctx = (from, to) => ({ me: day[0], fromMin: H(from), toMin: H(to), todayShifts: day,
+  const ctx = (from, to) => ({ me: day[0], fromMin: H(from), toMin: H(to), toleranceMin: 15, todayShifts: day,
     approvedEmpIds: [], boundEmpIds: ['A', 'N1', 'N2', 'M'] });
   assert.deepEqual([...g.eligibleColleagues(ctx('15:00', '15:30'))], ['N1', 'N2', 'M']);
   // 14:00 申請、14:30 失效：E 班 14:30 才上班，不算（[from, to) 不含 14:30）
@@ -65,19 +65,23 @@ test('失效時間不晚於表定下班', () => {
 
 const req = (status = S.PENDING, extra = {}) => ({ empId: 'A', date: '2026-11-10', status, ...today[0], ...extra, empId: 'A' });
 
-test('誰的同意算數：按下的那一刻正在上班', () => {
+test('誰的同意算數：按下的那一刻正在上班，而且會留守到申請人表定下班', () => {
   const r = req();
   const chk = (voterEmpId, voter, at, approved = false, date) =>
-    g.checkColleague({ request: r, voter, voterEmpId, voterApprovedToday: approved, now: now(at, date) });
+    g.checkColleague({ request: r, voter, voterEmpId, voterApprovedToday: approved, now: now(at, date), toleranceMin: 15 });
   assert.match(chk('A', today[0], '15:00').reason, /本人/);
   assert.match(chk('F', today[5], '15:00').reason, /休假/);
   assert.match(chk('X', null, '15:00').reason, /休假/);
   assert.match(chk('E', today[4], '15:00').reason, /已過下班時間（14:50）/);   // 7-3 已下班
-  assert.equal(chk('E', today[4], '14:40').ok, true);                          // 7-3 還在班：不同班別也算
+  assert.match(chk('E', today[4], '14:40').reason, /表定下班時間（14:50）早於申請人（16:50）/);  // 7-3 在班但不留守
   assert.match(chk('C', today[2], '15:00', true).reason, /已核准/);
   assert.equal(chk('B', today[1], '15:00').ok, true);
   assert.equal(chk('D', today[3], '15:00').ok, true);
   assert.equal(chk('D', today[3], '16:45').ok, false);                         // ▲ 開門班 16:45 下班
+  // ▲ 開門班申請，同班別 7-5 可以同意（比較沒有提早的下班時間）
+  const openerReq = { ...today[3], status: S.PENDING, empId: 'D', date: '2026-11-10' };
+  assert.equal(g.checkColleague({ request: openerReq, voter: today[1], voterEmpId: 'B', voterApprovedToday: false,
+    now: now('16:00'), toleranceMin: 0 }).ok, true);
   assert.match(chk('B', today[1], '09:00', false, '2026-11-11').reason, /其他日期/);
   const e = { empId: 'N', start: H('14:30'), end: H('22:00') };
   assert.match(chk('N', e, '14:20').reason, /還沒到上班時間（14:30）/);
@@ -138,4 +142,15 @@ test('逾時、取消、主管決定', () => {
   assert.equal(g.checkCanCancel({ status: S.APPROVED }).ok, false);
   assert.equal(g.checkCanDecide({ status: S.SUPERVISOR }).ok, true);
   assert.equal(g.checkCanDecide({ status: S.PENDING }).ok, false);
+});
+
+test('留守寬容：11-5（17:00）申請，7-5（16:50）在 15 分鐘內可以同意，0 分鐘就不行', () => {
+  const r = { ...shift('A', '11-5'), status: S.PENDING, date: '2026-11-10' };
+  const v = shift('B', '7-5');
+  const chk = (tol) => g.checkColleague({ request: r, voter: v, voterEmpId: 'B', voterApprovedToday: false, now: now('16:30'), toleranceMin: tol });
+  assert.equal(chk(15).ok, true);
+  assert.equal(chk(0).ok, false);
+  // E 班同意 7-5：一定留守
+  const e = shift('N', 'E');
+  assert.equal(g.checkColleague({ request: req(), voter: e, voterEmpId: 'N', voterApprovedToday: false, now: now('16:00'), toleranceMin: 15 }).ok, true);
 });
