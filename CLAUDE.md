@@ -31,3 +31,4 @@ LINE 提前下班申請系統。規格見 `提前下班申請系統 規格書.md
 - `npm run parity`：用加班費專案的 Python 解析整份排班表，和 JS 逐格比對。輸出的 `test/fixtures/` 含人名，已 gitignore。
 - `npm run push`：檢查、測試通過才 `clasp push`。
 - 新增 src 檔案時，整合測試會自動載入；純邏輯檔另外加進 `test/load.js`。
+- 圖解小手冊：原稿 `guide/guide.fragment.html`（也發布為 Claude Artifact https://claude.ai/artifact/LpnNf7NCi6USZ9Sz3UYJoN ）。改完執行 `python tools/build_guide.py` 產生 `liff/guide.html`（公開網址 https://boggy1021.github.io/EarlyOffSystem/guide.html ，推送後自動部署）與 `output/提前下班圖解小手冊.pdf`（不進 git）。規則或群組名稱改了，小手冊、Claude Docs 文字版使用說明、規格書要一起改。
