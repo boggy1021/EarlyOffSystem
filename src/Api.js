@@ -406,9 +406,9 @@ function apiOtApply_(who, body) {
     reason: reason, createdAt: now.ms, status: ot.status
   });
   var sups = employees_().filter(function (e) {
-    return e.role === ROLE.SUPERVISOR && e.bindStatus === BIND.OK && e.userId && e.empId !== emp.empId;
+    return isOtApprover_(e) && e.bindStatus === BIND.OK && e.userId && e.empId !== emp.empId;
   });
-  if (!sups.length) console.warn('沒有已綁定的主管可以通知加班申請：' + ot.id);
+  if (!sups.length) console.warn('沒有已綁定的加班審核人可以通知加班申請：' + ot.id);
   var card = overtimeCard_(ot);
   sups.forEach(function (s) { push_(s.userId, [card]); });
   return { overtime: otSummary_(ot), notified: sups.length };
@@ -425,14 +425,25 @@ function apiOtCancel_(who, body) {
   return { overtime: otSummary_(ot) };
 }
 
+/** 加班審核人 = 主管，或「員工」表「加班審核」為「是」的同仁（例如護理長、組長）。 */
+function isOtApprover_(e) {
+  return e.role === ROLE.SUPERVISOR || e.otApprover === true;
+}
+
+function requireOtApprover_(who) {
+  var emp = requireEmployee_(who.userId);
+  if (!isOtApprover_(emp)) throw apiError_('DENIED', '只有主管或加班審核人可以查看。');
+  return emp;
+}
+
 function apiOtDecideView_(who, body) {
-  var sup = requireSupervisor_(who);
+  var sup = requireOtApprover_(who);
   var ot = findOvertime_(body.id);
   return { overtime: otSummary_(ot), canDecide: checkCanDecideOvertime(ot, sup.empId) };
 }
 
 function apiOtDecide_(who, body) {
-  var sup = requireSupervisor_(who);
+  var sup = requireOtApprover_(who);
   var ot = findOvertime_(body.id);
   var chk = checkCanDecideOvertime(ot, sup.empId);
   if (!chk.ok) throw apiError_('DENIED', chk.reason);
@@ -447,8 +458,8 @@ function apiOtDecide_(who, body) {
   var applicant = findEmployee_(ot.empId);
   var what = ot.date.slice(5).replace('-', '/') + ' ' + minToHm(ot.start) + '–' + minToHm(ot.end);
   push_(applicant && applicant.userId, [textMsg_(ok
-    ? '✅ 主管已核准您的加班申請（' + what + '）。\n加班費仍以打卡紀錄核算。'
-    : '主管這次沒有核准您的加班申請（' + what + '）。如有疑問請直接詢問主管。')]);
+    ? '✅ ' + sup.name + ' 已核准您的加班申請（' + what + '）。\n加班費仍以打卡紀錄核算。'
+    : sup.name + ' 這次沒有核准您的加班申請（' + what + '）。如有疑問請直接詢問。')]);
   return { overtime: otSummary_(ot) };
 }
 

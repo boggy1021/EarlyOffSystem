@@ -43,6 +43,8 @@ function setupSheets() {
     SpreadsheetApp.newDataValidation().requireValueInList([BIND.NONE, BIND.PENDING, BIND.OK]).build());
   emp.getRange(2, eh.indexOf('角色') + 1, emp.getMaxRows() - 1, 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList([ROLE.NURSE, ROLE.ADMIN, ROLE.CLEANER, ROLE.SUPERVISOR]).build());
+  emp.getRange(2, eh.indexOf('加班審核') + 1, emp.getMaxRows() - 1, 1).setDataValidation(
+    SpreadsheetApp.newDataValidation().requireValueInList(['是', '否']).build());
 
   var have = readAll_(TABLES.SETTINGS).map(function (r) { return r.key; });
   SETTING_DEFAULTS.forEach(function (d) {

@@ -11,7 +11,7 @@ var TABLES = {
     cols: [
       ['empId', '員工編號'], ['name', '姓名'], ['aliases', '別名'], ['userId', 'LINE userId'],
       ['lineName', 'LINE 名稱'], ['bindStatus', '綁定狀態'], ['bindAt', '綁定申請時間', 'ts'],
-      ['role', '角色']
+      ['role', '角色'], ['otApprover', '加班審核', 'bool']
     ]
   },
   SCHED: {

@@ -259,6 +259,28 @@ test('加班：表單 → 申請推播主管 → 主管核准 → 推播申請�
   assert.equal(call('uE1', 'me').data.overtimes.length, 3);
 });
 
+test('加班審核人：「加班審核」為是的護理師也收得到、能核准，但不能審自己的；提前下班仍是護理師', () => {
+  const { ctx, call, at, pushes } = setup();
+  const emps = ctx.readAll_(ctx.TABLES.EMP);
+  ctx.update_(ctx.TABLES.EMP, emps.find((e) => e.name === '乙')._row, { otApprover: '是' });
+  at('16:30');
+  const ap = call('uE1', 'otApply', { date: '2026-11-10', start: '16:50', end: '17:30', reason: '下機' });
+  assert.equal(ap.data.notified, 2);                                     // 庚（主管）＋乙
+  assert.deepEqual(pushes.map((p) => p.body.to).sort(), ['uE2', 'uS1']);
+  const id = ap.data.overtime.id;
+  assert.equal(call('uE3', 'otDecideView', { id }).code, 'DENIED');      // 一般護理師不行
+  const dec = call('uE2', 'otDecide', { id, approve: true });
+  assert.equal(dec.data.overtime.decidedBy, '乙');
+  assert.match(pushText(pushes[pushes.length - 1]), /乙 已核准您的加班申請/);
+  // 乙自己申請：只通知主管，乙不能審自己的
+  const own = call('uE2', 'otApply', { date: '2026-11-10', start: '16:50', end: '17:30', reason: '下機' });
+  assert.equal(own.data.notified, 1);
+  assert.equal(call('uE2', 'otDecide', { id: own.data.overtime.id, approve: true }).code, 'DENIED');
+  // 提前下班的同意資格不受影響：乙仍是護理師，可以同意甲
+  assert.equal(call('uE1', 'me').data.eligibleCount, 3);
+  assert.equal(call('uE2', 'decideView', { id }).code, 'DENIED');        // 提前下班的主管頁仍限主管
+});
+
 test('綁定：選名字 → 待確認 → 不能使用；已確認後不能改', () => {
   const { ctx, call, at } = setup();
   at('15:00');

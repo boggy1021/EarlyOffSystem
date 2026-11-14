@@ -270,8 +270,8 @@
           btn.disabled = true;
           api('otApply', { date: dateSel.value, start: start.value, end: end.value, reason: reason.value })
             .then(function (r) {
-              render(msg('ok', r.notified ? '已送出，等待主管核准；核准結果會由官方帳號通知您。'
-                                          : '已送出，但目前沒有可通知的主管，請直接告知主管。'),
+              render(msg('ok', r.notified ? '已送出，等待審核；核准結果會由官方帳號通知您。'
+                                          : '已送出，但目前沒有可通知的審核人，請直接告知主管。'),
                 overtimeCard(r.overtime),
                 h('button', { class: 'secondary', onclick: function () { location.href = liffLink('mine'); } }, '查看我的申請'),
                 closeButton());
@@ -290,7 +290,7 @@
           h('label', null, '加班開始'), start,
           h('label', null, '加班結束'), end,
           h('label', null, '原因'), reason,
-          h('p', { class: 'muted' }, '可事前申請今天的加班，也可補登 ' + d.backDays + ' 天內的加班；送出後由主管核准。')),
+          h('p', { class: 'muted' }, '可事前申請今天的加班，也可補登 ' + d.backDays + ' 天內的加班；送出後由主管或加班審核人（護理長、組長）核准。')),
         btn, closeButton());
     });
   };
@@ -298,7 +298,7 @@
   pages.otDecide = function (id) {
     return api('otDecideView', { id: id }).then(function (d) {
       var o = d.overtime;
-      var parts = [h('h1', null, '加班申請・主管決定'), h('p', null, h('b', null, o.name)), overtimeCard(o)];
+      var parts = [h('h1', null, '加班申請・審核'), h('p', null, h('b', null, o.name)), overtimeCard(o)];
       if (!d.canDecide.ok) {
         parts.push(msg('warn', d.canDecide.reason));
       } else {
