@@ -1,6 +1,6 @@
 /* 提前下班申請 LIFF 前端。依網址參數 page 切換畫面：
  * apply（我想提前下班）、mine（我的申請）、agree（同意）、report（通知主管）、
- * decide（主管決定）、bind（綁定）。
+ * decide（主管決定）、bind（綁定）、overtime（申請加班）、otDecide（主管決定加班）。
  */
 (function () {
   'use strict';
@@ -67,6 +67,25 @@
       req.approvedAt && req.status === '已核准' ? row('核准時間', req.approvedAt) : null,
       req.status === '待主管決定' ? h('p', { class: 'muted' }, '已有同仁通知主管，等待主管決定。') : null,
       progress(req),
+      extra || null);
+  }
+
+  var WEEKDAYS = '日一二三四五六';
+
+  function dateLabel(date, today) {
+    var p = date.split('-').map(Number);
+    var wd = WEEKDAYS[new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay()];
+    return p[1] + '/' + p[2] + '（' + wd + '）' + (date === today ? ' 今天' : '');
+  }
+
+  function overtimeCard(o, extra) {
+    return h('div', { class: 'card' },
+      h('h2', null, dateLabel(o.date), ' ', badge(o.status)),
+      row('班別', o.shift || '沒有排班'),
+      row('加班', o.start + '–' + o.end + '（' + o.minutes + ' 分）'),
+      row('原因', o.reason),
+      row('申請時間', o.createdAt),
+      o.decidedAt ? row(o.decidedBy + ' 決定', o.decidedAt) : null,
       extra || null);
   }
 
@@ -177,7 +196,7 @@
   pages.mine = function () {
     return api('me').then(function (d) {
       if (d.bindStatus !== '已確認') return showBind(d);
-      var parts = [h('h1', null, '我的申請（今天）')];
+      var parts = [h('h1', null, '我的申請'), h('h2', null, '提前下班（今天）')];
       if (!d.requests.length) parts.push(h('p', { class: 'muted' }, '今天還沒有申請。'));
       d.requests.forEach(function (r) {
         var active = r.status === '進行中' || r.status === '待主管決定';
@@ -205,6 +224,97 @@
           }, '取消申請')
         ] : null));
       });
+      parts.push(h('h2', null, '加班'));
+      if (!d.overtimes.length) parts.push(h('p', { class: 'muted' }, '最近沒有加班申請。'));
+      d.overtimes.forEach(function (o) {
+        parts.push(overtimeCard(o, o.status === '待主管決定' ? h('button', {
+          class: 'danger',
+          onclick: function () {
+            if (!confirm('確定要取消這筆加班申請？')) return;
+            loading();
+            api('otCancel', { id: o.id }).then(function () { return pages.mine(); }).catch(showError);
+          }
+        }, '取消加班申請') : null));
+      });
+      parts.push(closeButton());
+      render(parts);
+    });
+  };
+
+  pages.overtime = function () {
+    return api('otForm').then(function (d) {
+      if (d.bindStatus !== '已確認') return showBind(d);
+      var byDate = {};
+      d.days.forEach(function (x) { byDate[x.date] = x; });
+      var dateSel = h('select', null, d.days.map(function (x) {
+        return h('option', { value: x.date }, dateLabel(x.date, d.today));
+      }));
+      var shiftInfo = h('p', { class: 'muted' });
+      var start = h('input', { type: 'time' });
+      var end = h('input', { type: 'time' });
+      var reason = h('textarea', { maxlength: '200', placeholder: '例如：病人延遲下機、交班事項多' });
+      var pick = function () {
+        var x = byDate[dateSel.value];
+        shiftInfo.textContent = x.shift
+          ? '當天班別 ' + x.shift.start + '–' + x.shift.end + '；加班時段不能和上班時間重疊。'
+          : '當天沒有排班（休假加班）。';
+        start.value = x.defaults.start;
+        end.value = x.defaults.end;
+      };
+      dateSel.addEventListener('change', pick);
+      pick();
+      var btn = h('button', {
+        onclick: function () {
+          if (!start.value || !end.value) return alert('請填寫加班開始與結束時間。');
+          if (!reason.value.trim()) return alert('請填寫加班原因。');
+          btn.disabled = true;
+          api('otApply', { date: dateSel.value, start: start.value, end: end.value, reason: reason.value })
+            .then(function (r) {
+              render(msg('ok', r.notified ? '已送出，等待主管核准；核准結果會由官方帳號通知您。'
+                                          : '已送出，但目前沒有可通知的主管，請直接告知主管。'),
+                overtimeCard(r.overtime),
+                h('button', { class: 'secondary', onclick: function () { location.href = liffLink('mine'); } }, '查看我的申請'),
+                closeButton());
+            }).catch(function (e) {
+              if (e.code !== 'DENIED') return showError(e);
+              btn.disabled = false;
+              alert(e.message);
+            });
+        }
+      }, '送出加班申請');
+      render(
+        h('h1', null, '申請加班'),
+        h('div', { class: 'card' },
+          row('姓名', d.employee.name),
+          h('label', null, '日期'), dateSel, shiftInfo,
+          h('label', null, '加班開始'), start,
+          h('label', null, '加班結束'), end,
+          h('label', null, '原因'), reason,
+          h('p', { class: 'muted' }, '可事前申請今天的加班，也可補登 ' + d.backDays + ' 天內的加班；送出後由主管核准。')),
+        btn, closeButton());
+    });
+  };
+
+  pages.otDecide = function (id) {
+    return api('otDecideView', { id: id }).then(function (d) {
+      var o = d.overtime;
+      var parts = [h('h1', null, '加班申請・主管決定'), h('p', null, h('b', null, o.name)), overtimeCard(o)];
+      if (!d.canDecide.ok) {
+        parts.push(msg('warn', d.canDecide.reason));
+      } else {
+        var go = function (approve) {
+          return function () {
+            if (!confirm(approve ? '確定核准這筆加班？' : '確定不核准這筆加班？')) return;
+            loading('處理中…');
+            api('otDecide', { id: id, approve: approve }).then(function (x) {
+              render(msg('ok', '已' + (approve ? '核准' : '不核准') + '，系統已通知申請人。'),
+                overtimeCard(x.overtime), closeButton());
+            }).catch(showError);
+          };
+        };
+        parts.push(h('button', { onclick: go(true) }, '准'),
+                   h('button', { class: 'danger', onclick: go(false) }, '不准'));
+      }
       parts.push(closeButton());
       render(parts);
     });
@@ -334,7 +444,7 @@
       var page = q.get('page') || 'apply';
       var fn = pages[page];
       if (!fn) return render(msg('err', '未知的頁面：' + page));
-      if ((page === 'agree' || page === 'report' || page === 'decide') && !q.get('id')) {
+      if ((page === 'agree' || page === 'report' || page === 'decide' || page === 'otDecide') && !q.get('id')) {
         return render(msg('err', '網址缺少申請編號。'));
       }
       loading();

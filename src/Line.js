@@ -116,3 +116,30 @@ function supervisorCard_(req, countedVotes, reports) {
     }
   };
 }
+
+/** 推播給主管的加班申請卡片。 */
+function overtimeCard_(ot) {
+  var shift = ot.shiftStart !== null ? minToHm(ot.shiftStart) + '–' + minToHm(ot.shiftEnd) : '沒有排班';
+  return {
+    type: 'flex',
+    altText: '加班申請需要您決定：' + ot.name,
+    contents: {
+      type: 'bubble',
+      body: {
+        type: 'box', layout: 'vertical', spacing: 'sm',
+        contents: [
+          flexText_('加班申請・需要主管決定', { weight: 'bold', size: 'sm', color: '#2563EB' }),
+          flexText_(ot.name, { weight: 'bold', size: 'xl', margin: 'md' }),
+          flexRow_('日期', ot.date),
+          flexRow_('班別', shift),
+          flexRow_('加班', minToHm(ot.start) + '–' + minToHm(ot.end) + '（' + (ot.end - ot.start) + ' 分）'),
+          flexRow_('原因', ot.reason || '—')
+        ]
+      },
+      footer: {
+        type: 'box', layout: 'vertical',
+        contents: [uriButton_('查看並決定', liffUrl_('otDecide', ot.id), 'primary')]
+      }
+    }
+  };
+}

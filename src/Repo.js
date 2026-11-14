@@ -48,6 +48,16 @@ var TABLES = {
       ['decision', '決定'], ['decidedAt', '決定時間', 'ts']
     ]
   },
+  OT: {
+    name: '加班申請',
+    cols: [
+      ['id', '申請ID'], ['empId', '員工編號'], ['name', '姓名'], ['date', '日期', 'date'],
+      ['shiftStart', '表定上班', 'time'], ['shiftEnd', '表定下班', 'time'],
+      ['start', '加班開始', 'time'], ['end', '加班結束', 'time'], ['minutes', '加班分鐘'],
+      ['reason', '原因'], ['createdAt', '申請時間', 'ts'], ['status', '狀態'],
+      ['supervisorEmpId', '主管編號'], ['supervisorName', '主管姓名'], ['decidedAt', '決定時間', 'ts']
+    ]
+  },
   SETTINGS: {
     name: '設定',
     cols: [['key', '項目'], ['value', '值'], ['desc', '說明']]
@@ -55,7 +65,8 @@ var TABLES = {
 };
 
 var BIND = { NONE: '未綁定', PENDING: '待確認', OK: '已確認' };
-var ROLE = { NURSE: '護理師', SUPERVISOR: '主管' };
+// 提前下班只能由同職稱的同仁同意（護理師同意護理師、行政人員同意行政人員）；主管只負責決定
+var ROLE = { NURSE: '護理師', ADMIN: '行政人員', SUPERVISOR: '主管' };
 var DECISION = { OK: '准', NO: '不准' };
 
 var SETTING_DEFAULTS = [
@@ -63,6 +74,7 @@ var SETTING_DEFAULTS = [
   ['逾時分鐘', 30, '未達門檻的申請幾分鐘後失效（不會晚於表定下班）'],
   ['留守寬容分鐘', 15, '同意者的表定下班最多可以比申請人早幾分鐘（例如 11-5 申請時 7-5 仍可同意）'],
   ['群組名稱', '淨新洗腎室', '申請頁提示要分享到哪個 LINE 群組（只填名稱，畫面會顯示成「淨新洗腎室」群組）'],
+  ['加班補登天數', 7, '加班申請最多可以補登幾天前（0 = 只能申請今天）'],
   ['班表檔案ID', '', 'Google Drive 上排班表 xlsx 的檔案 ID 或網址（匯入班表時會自動更新）']
 ];
 
@@ -189,6 +201,7 @@ function settings_() {
     timeoutMin: parseInt(out['逾時分鐘'], 10) || 30,
     toleranceMin: isNaN(parseInt(out['留守寬容分鐘'], 10)) ? 15 : parseInt(out['留守寬容分鐘'], 10),
     groupName: String(out['群組名稱'] || ''),
+    otBackDays: isNaN(parseInt(out['加班補登天數'], 10)) ? 7 : Math.max(0, parseInt(out['加班補登天數'], 10)),
     scheduleFileId: String(out['班表檔案ID'] || '')
   };
 }
@@ -252,6 +265,26 @@ function votesFor_(reqId) {
 
 function reportsFor_(reqId) {
   return readAll_(TABLES.REPORT).filter(function (v) { return v.reqId === reqId; });
+}
+
+function overtimeFromRow_(r) {
+  var t = function (s) { return s ? hmToMin(s) : null; };
+  return {
+    _row: r._row, id: r.id, empId: r.empId, name: r.name, date: r.date,
+    shiftStart: t(r.shiftStart), shiftEnd: t(r.shiftEnd), start: t(r.start), end: t(r.end),
+    reason: r.reason, createdMs: r.createdAt, status: r.status,
+    supervisorEmpId: r.supervisorEmpId, supervisorName: r.supervisorName, decidedMs: r.decidedAt
+  };
+}
+
+function overtimes_() {
+  return readAll_(TABLES.OT).map(overtimeFromRow_);
+}
+
+function findOvertime_(id) {
+  var all = overtimes_();
+  for (var i = 0; i < all.length; i++) if (all[i].id === id) return all[i];
+  throw apiError_('NOT_FOUND', '找不到這筆加班申請。');
 }
 
 function saveRequestPatch_(req, patch) {

@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const FILES = ['ShiftConfig.js', 'Shift.js', 'Rules.js'];
+const FILES = ['ShiftConfig.js', 'Shift.js', 'Rules.js', 'Overtime.js'];
 
 function loadGas() {
   const ctx = vm.createContext({});

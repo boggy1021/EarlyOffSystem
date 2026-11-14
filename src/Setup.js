@@ -42,7 +42,7 @@ function setupSheets() {
   emp.getRange(2, eh.indexOf('綁定狀態') + 1, emp.getMaxRows() - 1, 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList([BIND.NONE, BIND.PENDING, BIND.OK]).build());
   emp.getRange(2, eh.indexOf('角色') + 1, emp.getMaxRows() - 1, 1).setDataValidation(
-    SpreadsheetApp.newDataValidation().requireValueInList([ROLE.NURSE, ROLE.SUPERVISOR]).build());
+    SpreadsheetApp.newDataValidation().requireValueInList([ROLE.NURSE, ROLE.ADMIN, ROLE.SUPERVISOR]).build());
 
   var have = readAll_(TABLES.SETTINGS).map(function (r) { return r.key; });
   SETTING_DEFAULTS.forEach(function (d) {

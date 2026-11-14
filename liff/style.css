@@ -20,6 +20,7 @@ body {
 main { max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; }
 h1 { font-size: 20px; margin: 4px 0 16px; }
 h2 { font-size: 17px; margin: 0 0 8px; }
+main > h2 { margin-top: 20px; }
 .card {
   background: var(--card);
   border-radius: 12px;

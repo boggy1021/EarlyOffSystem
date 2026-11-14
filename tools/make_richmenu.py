@@ -24,8 +24,8 @@ REG = str(FONT_DIR / 'msjh.ttc')
 # (標題, 副標, 圖示, 背景, 主色, 副標色)
 CELLS = [
     ('我想提前下班', '送出申請', 'clock', GREEN, WHITE, (220, 252, 231)),
-    ('我的申請', '查進度・取消・重新分享', 'list', WHITE, DARK, GRAY),
-    ('綁定', '第一次使用', 'person', LIGHT, DARK, GRAY),
+    ('申請加班', '事前申請・事後補登', 'overtime', WHITE, DARK, GRAY),
+    ('我的申請', '查進度・取消', 'list', LIGHT, DARK, GRAY),
 ]
 
 
@@ -72,7 +72,21 @@ def icon_person(d, cx, cy, r, color, bg):
     d.line([bx - s(6), by + s(18), bx + s(24), by - s(16)], fill=WHITE, width=s(12))
 
 
-ICONS = {'clock': icon_clock, 'list': icon_list, 'person': icon_person}
+def icon_overtime(d, cx, cy, r, color, bg):
+    w = s(16)
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=color, width=w)
+    d.line([cx, cy, cx, cy - r * 0.58], fill=color, width=w)        # 分針
+    d.line([cx, cy, cx - r * 0.45, cy + r * 0.22], fill=color, width=w)  # 時針
+    d.ellipse([cx - w, cy - w, cx + w, cy + w], fill=color)
+    # 右上角的「＋」徽章
+    ax, ay, ar = cx + r * 0.95, cy - r * 0.95, s(46)
+    d.ellipse([ax - ar - s(10), ay - ar - s(10), ax + ar + s(10), ay + ar + s(10)], fill=bg)
+    d.ellipse([ax - ar, ay - ar, ax + ar, ay + ar], fill=color)
+    d.line([ax - s(22), ay, ax + s(22), ay], fill=bg, width=s(12))
+    d.line([ax, ay - s(22), ax, ay + s(22)], fill=bg, width=s(12))
+
+
+ICONS = {'clock': icon_clock, 'overtime': icon_overtime, 'list': icon_list, 'person': icon_person}
 
 
 def centered(d, cx, y, text, font, fill):

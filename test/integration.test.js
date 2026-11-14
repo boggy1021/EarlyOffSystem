@@ -193,6 +193,72 @@ test('取消與重新分享', () => {
   assert.equal(call('uE1', 'cancel', { id }).code, 'DENIED');
 });
 
+test('同職稱：行政人員不能同意護理師，也不計入可同意人數', () => {
+  const { ctx, call, at } = setup();
+  const emps = ctx.readAll_(ctx.TABLES.EMP);
+  ctx.update_(ctx.TABLES.EMP, emps.find((e) => e.name === '丙')._row, { role: '行政人員' });
+  at('15:00');
+  assert.equal(call('uE1', 'me').data.eligibleCount, 2);              // 乙、丁
+  const id = call('uE1', 'apply').data.request.id;
+  const v = call('uE3', 'agree', { id });
+  assert.equal(v.data.counted, false);
+  assert.match(v.data.reason, /只有護理師可以操作/);
+  assert.equal(call('uE3', 'report', { id }).code, 'DENIED');          // 通知主管同樣限同職稱
+  // 丙（行政人員）自己申請：沒有其他行政人員 → 不能申請
+  assert.match(call('uE3', 'me').data.canApply.reason, /同職稱同仁只有 0 位/);
+});
+
+test('加班：表單 → 申請推播主管 → 主管核准 → 推播申請人；取消與重疊', () => {
+  const { ctx, call, at, pushes } = setup();
+  at('16:30');
+  const form = call('uE1', 'otForm');
+  assert.equal(form.ok, true, form.error);
+  assert.equal(form.data.days.length, 8);                 // 今天 + 補登 7 天
+  assert.deepEqual(form.data.days[0], {
+    date: '2026-11-10', shift: { start: '06:50', end: '16:50' }, defaults: { start: '16:50', end: '17:20' }
+  });
+  assert.equal(form.data.days[1].shift, null);
+  assert.equal(call('uNew', 'otForm').data.bindStatus, '未綁定');
+
+  let ap = call('uE1', 'otApply', { date: '2026-11-10', start: '16:00', end: '17:00', reason: '下機' });
+  assert.match(ap.error, /重疊/);
+  ap = call('uE1', 'otApply', { date: '2026-11-10', start: '16:50', end: '17:30', reason: '病人延遲下機' });
+  assert.equal(ap.ok, true, ap.error);
+  assert.equal(ap.data.notified, 1);
+  assert.equal(ap.data.overtime.minutes, 40);
+  assert.equal(pushes.length, 1);
+  assert.equal(pushes[0].body.to, 'uS1');
+  assert.match(pushText(pushes[0]), /page=otDecide&id=OT/);
+  assert.match(pushText(pushes[0]), /病人延遲下機/);
+  const id = ap.data.overtime.id;
+  const row = ctx.readAll_(ctx.TABLES.OT)[0];
+  assert.deepEqual([row.start, row.end, row.minutes, row.shiftEnd], ['16:50', '17:30', '40', '16:50']);
+
+  assert.match(call('uE1', 'otApply', { date: '2026-11-10', start: '17:00', end: '18:00', reason: 'x' }).error, /另一筆/);
+  assert.equal(call('uE1', 'me').data.overtimes[0].status, '待主管決定');
+  assert.equal(call('uE2', 'otDecideView', { id }).code, 'DENIED');      // 非主管
+  assert.equal(call('uE2', 'otCancel', { id }).code, 'DENIED');          // 不是自己的
+  const dv = call('uS1', 'otDecideView', { id });
+  assert.equal(dv.data.canDecide.ok, true);
+  const dec = call('uS1', 'otDecide', { id, approve: true });
+  assert.equal(dec.data.overtime.status, '已核准');
+  assert.equal(dec.data.overtime.decidedBy, '庚');
+  assert.equal(pushes.length, 2);
+  assert.equal(pushes[1].body.to, 'uE1');
+  assert.match(pushText(pushes[1]), /已核准您的加班申請（11\/10 16:50–17:30）/);
+  assert.equal(call('uS1', 'otDecide', { id, approve: false }).code, 'DENIED');
+  assert.equal(call('uE1', 'otCancel', { id }).code, 'DENIED');          // 已核准不能取消
+
+  // 補登休假日（11/09）→ 取消後時段釋出
+  const back = call('uE1', 'otApply', { date: '2026-11-09', start: '08:00', end: '12:00', reason: '支援' });
+  assert.equal(back.ok, true, back.error);
+  assert.equal(back.data.overtime.shift, '');
+  assert.equal(call('uE1', 'otCancel', { id: back.data.overtime.id }).data.overtime.status, '已取消');
+  assert.equal(call('uE1', 'otApply', { date: '2026-11-09', start: '08:00', end: '12:00', reason: '支援' }).ok, true);
+  assert.match(call('uE1', 'otApply', { date: '2026-11-02', start: '08:00', end: '09:00', reason: 'x' }).error, /7 天內/);
+  assert.equal(call('uE1', 'me').data.overtimes.length, 3);
+});
+
 test('綁定：選名字 → 待確認 → 不能使用；已確認後不能改', () => {
   const { ctx, call, at } = setup();
   at('15:00');

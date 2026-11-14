@@ -70,6 +70,11 @@ test('誰的同意算數：按下的那一刻正在上班，而且會留守到�
   const chk = (voterEmpId, voter, at, approved = false, date) =>
     g.checkColleague({ request: r, voter, voterEmpId, voterApprovedToday: approved, now: now(at, date), toleranceMin: 15 });
   assert.match(chk('A', today[0], '15:00').reason, /本人/);
+  const role = (voterRole, applicantRole) => g.checkColleague({ request: r, voter: today[1], voterEmpId: 'B',
+    voterApprovedToday: false, now: now('15:00'), toleranceMin: 15, voterRole, applicantRole });
+  assert.equal(role('護理師', '護理師').ok, true);
+  assert.match(role('行政人員', '護理師').reason, /只有護理師可以操作（您的職稱是「行政人員」）/);
+  assert.match(role('', '行政人員').reason, /未設定/);
   assert.match(chk('F', today[5], '15:00').reason, /休假/);
   assert.match(chk('X', null, '15:00').reason, /休假/);
   assert.match(chk('E', today[4], '15:00').reason, /已過下班時間（14:50）/);   // 7-3 已下班

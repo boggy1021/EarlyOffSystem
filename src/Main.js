@@ -37,11 +37,11 @@ function handleWebhook_(events) {
     if (!ev.replyToken) return;
     if (ev.type === 'follow') {
       reply_(ev.replyToken, [textMsg_(
-        '歡迎使用提前下班申請。\n第一次使用請先點下方選單的「綁定」，選擇您的名字；' +
+        '歡迎使用提前下班／加班申請。\n第一次使用請點下方選單任一項，依畫面選擇您的名字完成綁定；' +
         '管理者確認後就可以開始申請。')]);
     } else if (ev.type === 'message') {
       reply_(ev.replyToken, [textMsg_(
-        '請使用下方選單操作：\n・我想提前下班：送出申請\n・我的申請：查看進度、取消、重新分享\n・綁定：第一次使用')]);
+        '請使用下方選單操作：\n・我想提前下班：送出申請\n・申請加班：事前申請或事後補登，由主管核准\n・我的申請：查看進度、取消、重新分享')]);
     }
   });
 }
