@@ -433,6 +433,12 @@
 
   // ── 啟動 ─────────────────────────────────────────────
 
+  // LINE 小網頁的視窗標題顯示 document.title，依頁面換掉，避免加班頁也寫著「提前下班」
+  var TITLES = {
+    apply: '提前下班申請', agree: '提前下班申請', report: '提前下班申請', decide: '提前下班申請',
+    overtime: '加班申請', otDecide: '加班申請', mine: '我的申請', bind: '綁定員工身分'
+  };
+
   function start() {
     if (!C.LIFF_ID || !C.API_URL) return render(msg('err', '尚未設定 config.js 的 LIFF_ID / API_URL。'));
     liff.init({ liffId: C.LIFF_ID }).then(function () {
@@ -444,6 +450,7 @@
       var page = q.get('page') || 'apply';
       var fn = pages[page];
       if (!fn) return render(msg('err', '未知的頁面：' + page));
+      if (TITLES[page]) document.title = TITLES[page];
       if ((page === 'agree' || page === 'report' || page === 'decide' || page === 'otDecide') && !q.get('id')) {
         return render(msg('err', '網址缺少申請編號。'));
       }
