@@ -66,7 +66,7 @@ var TABLES = {
 
 var BIND = { NONE: '未綁定', PENDING: '待確認', OK: '已確認' };
 // 提前下班只能由同職稱的同仁同意（護理師同意護理師、行政人員同意行政人員）；主管只負責決定
-var ROLE = { NURSE: '護理師', ADMIN: '行政人員', SUPERVISOR: '主管' };
+var ROLE = { NURSE: '護理師', ADMIN: '行政人員', CLEANER: '清潔人員', SUPERVISOR: '主管' };
 var DECISION = { OK: '准', NO: '不准' };
 
 var SETTING_DEFAULTS = [
