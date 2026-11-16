@@ -2,7 +2,7 @@
 
 LINE 提前下班申請系統（2026-11-14 起也處理加班申請）。規格見 `提前下班申請系統 規格書.md`，部署步驟見 `部署步驟.md`。
 
-**接續開發前先讀 `開發紀錄.md`**：目前狀態、部署 ID 與網址、待辦與待決事項。
+**接續開發前先讀 `開發紀錄.md`**：目前狀態、部署 ID 與網址、待辦與待決事項。開頭若有「⏰ 下次在 DrChenOffice 開工」清單（電腦名稱用 `hostname` 確認），**對話一開始就主動提醒使用者逐項處理**。
 
 ## 架構
 - `src/`：Google Apps Script（clasp 推送）。同一個網頁應用程式 `/exec` 同時是 LIFF 的 JSON API 和 Messaging API Webhook（`doPost` 依 body 有沒有 `events` 分流）。
