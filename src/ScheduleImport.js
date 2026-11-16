@@ -6,15 +6,15 @@
 
 /**
  * 行政、清潔人員在大排班表底部只寫「V」（上班）／off，時段依「員工」表的角色決定
- * （和加班費專案 config.STAFF_SHIFTS 相同，2026-11-16 使用者確認）。
+ * （上下班同加班費專案 config.STAFF_SHIFTS；午休 12:30–13:30 是 2026-11-16 使用者確認的）。
  * 午休可以申請加班（沒申請就是休息）；行政週二、四、六可以 16:30 走，但 16:30–17:30
  * 仍算上班時間，不能申請加班，所以表定下班一律 17:30。
  */
 var STAFF_WORK_CODE = 'V';
 var STAFF_SHIFTS = {
-  '行政人員': { start: '08:30', end: '17:30', breakStart: '12:00', breakEnd: '13:00',
+  '行政人員': { start: '08:30', end: '17:30', breakStart: '12:30', breakEnd: '13:30',
                earlyOut: { 2: '週二 16:30 可下班', 4: '週四 16:30 可下班', 6: '週六 16:30 可下班' } },
-  '清潔人員': { start: '07:30', end: '16:30', breakStart: '12:00', breakEnd: '13:00', earlyOut: {} }
+  '清潔人員': { start: '07:30', end: '16:30', breakStart: '12:30', breakEnd: '13:30', earlyOut: {} }
 };
 
 function staffShiftRow_(p, empId, s) {

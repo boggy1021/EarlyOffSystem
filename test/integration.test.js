@@ -359,8 +359,8 @@ test('行政、清潔的 V：依角色換成時段，午休存在班表；匯入
   const s = ctx.readAll_(ctx.TABLES.SCHED);
   const ren = s.find((r) => r.name === '壬'), chou = s.find((r) => r.name === '丑');
   assert.deepEqual([ren.start, ren.end, ren.breakStart, ren.breakEnd, ren.note],
-    ['08:30', '17:30', '12:00', '13:00', '週二 16:30 可下班']);
-  assert.deepEqual([chou.start, chou.end, chou.breakStart, chou.breakEnd], ['07:30', '16:30', '12:00', '13:00']);
+    ['08:30', '17:30', '12:30', '13:30', '週二 16:30 可下班']);
+  assert.deepEqual([chou.start, chou.end, chou.breakStart, chou.breakEnd], ['07:30', '16:30', '12:30', '13:30']);
   assert.equal(s.find((r) => r.name === '甲').breakStart, '');
 });
 
@@ -368,15 +368,16 @@ test('行政加班：午休可以申請、上班時間與 16:30–17:30 不行',
   const { call, at } = setupStaff();
   at('18:30');
   const form = call('uA1', 'otForm').data.days[0];
-  assert.deepEqual(form.shift, { start: '08:30', end: '17:30', breakStart: '12:00', breakEnd: '13:00' });
+  assert.deepEqual(form.shift, { start: '08:30', end: '17:30', breakStart: '12:30', breakEnd: '13:30' });
   assert.deepEqual(form.defaults, { start: '17:30', end: '18:00' });
   const ot = (start, end) => call('uA1', 'otApply', { date: '2026-11-10', start, end, reason: '處理病歷' });
-  assert.match(ot('08:30', '12:30').error, /08:30–12:00、13:00–17:30）重疊/);
+  assert.match(ot('08:30', '12:30').error, /08:30–12:30、13:30–17:30）重疊/);
   assert.match(ot('16:30', '17:30').error, /重疊/);        // 週二可以 16:30 走，但這段不能報加班
-  assert.match(ot('11:50', '12:20').error, /重疊/);
+  assert.match(ot('12:00', '12:50').error, /重疊/);
+  assert.match(ot('13:00', '13:40').error, /重疊/);
   assert.equal(ot('12:30', '12:50').ok, true);            // 午休沒休息
   assert.equal(ot('17:30', '18:00').ok, true);
-  assert.equal(call('uC1', 'otApply', { date: '2026-11-10', start: '12:00', end: '13:00', reason: 'x' }).ok, true);
+  assert.equal(call('uC1', 'otApply', { date: '2026-11-10', start: '12:30', end: '13:30', reason: 'x' }).ok, true);
   assert.match(call('uC1', 'otApply', { date: '2026-11-10', start: '16:00', end: '17:00', reason: 'x' }).error, /重疊/);
 });
 
