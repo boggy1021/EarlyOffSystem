@@ -33,6 +33,7 @@ function menuImportSchedule() {
 
 /** 匯入一個月。回傳 {message}。也可以在編輯器直接執行。 */
 function importSchedule(fileId, sheetName) {
+  clearReadCache_();
   var ym = parseSheetName(sheetName);
   if (!ym) throw new Error('工作表名稱要像「11511」（民國年 + 月）。');
 
@@ -108,6 +109,7 @@ function readXlsxSheet_(fileId, sheetName) {
 
 /** 刪除「班表」中某月份（yyyy-MM）的所有列，再寫入新的。 */
 function replaceMonth_(ym, rows) {
+  delete READ_CACHE_[TABLES.SCHED.name];
   var sh = sheet_(TABLES.SCHED);
   var header = header_(sh);
   var keep = readAll_(TABLES.SCHED).filter(function (r) { return r.date.slice(0, 7) !== ym; });
@@ -120,4 +122,5 @@ function replaceMonth_(ym, rows) {
     sh.getRange(2, 1, all.length, header.length)
       .setValues(all.map(function (o) { return toRowArray_(TABLES.SCHED, header, o); }));
   }
+  delete READ_CACHE_[TABLES.SCHED.name];   // 上面讀過的是寫入前的舊資料
 }

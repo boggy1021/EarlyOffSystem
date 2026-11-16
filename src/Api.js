@@ -22,17 +22,29 @@ var API_ACTIONS = {
   bind: apiBind_
 };
 
+// 會用到提前下班申請狀態的動作，才需要先把逾時的申請改成已失效（加班、綁定不用，省一次讀表）
+var EXPIRY_ACTIONS_ = ['me', 'apply', 'shareCard', 'cancel', 'view', 'agree', 'report', 'decideView', 'decide'];
+
 function handleApi_(body) {
+  clearReadCache_();
+  beginPushQueue_();
   try {
     var fn = API_ACTIONS[body.action];
     if (!fn) throw apiError_('BAD_REQUEST', '未知的動作：' + body.action);
     var who = verifyIdToken_(body.idToken);
     var data = withLock_(function () {
-      expireDue_();
+      if (EXPIRY_ACTIONS_.indexOf(body.action) >= 0) expireDue_();
       return fn(who, body);
     });
+    // 資料已寫入、鎖已放開，再平行送出推播；推播失敗不影響申請結果
+    try {
+      flushPushQueue_();
+    } catch (pe) {
+      console.error('推播失敗：' + (pe && pe.stack || pe));
+    }
     return { ok: true, data: data };
   } catch (e) {
+    discardPushQueue_();
     if (e.apiCode) return { ok: false, code: e.apiCode, error: e.message };
     console.error(e && e.stack || e);
     return { ok: false, code: 'SERVER', error: '系統錯誤，請稍後再試。（' + e.message + '）' };
@@ -382,6 +394,12 @@ function apiOtApply_(who, body) {
   var reason = String(body.reason || '').trim().slice(0, OT_REASON_MAX);
   var shift = /^\d{4}-\d{2}-\d{2}$/.test(date) ? myShiftOn_(emp.empId, date) : null;
   var all = overtimes_();
+  // 重送保護：網路慢、視窗被關掉後再按一次送出，10 分鐘內同一時段的待審申請直接回傳原本那筆
+  var dup = all.filter(function (o) {
+    return o.empId === emp.empId && o.date === date && o.start === startMin && o.end === endMin &&
+           o.status === STATUS.SUPERVISOR && now.ms - o.createdMs < 10 * 60000;
+  })[0];
+  if (dup) return { overtime: otSummary_(dup), notified: 0, duplicate: true };
   var chk = checkCanApplyOvertime({
     now: now, date: date, shift: shift, startMin: startMin, endMin: endMin, reason: reason,
     backDays: cfg.otBackDays,

@@ -126,8 +126,25 @@ function writeCell_(type, v) {
 
 // ── 通用表格操作 ─────────────────────────────────────────
 
+// 同一次請求內，同一張表只讀一次（讀表是最慢的部分）；寫入該表時清掉快取。
+// 每次 API 請求開頭 clearReadCache_()，不會讀到上一次請求的舊資料。
+var READ_CACHE_ = {};
+
+function clearReadCache_() { READ_CACHE_ = {}; }
+
+function copyRows_(rows) {
+  return rows.map(function (o) { return Object.assign({}, o); });
+}
+
 /** 讀整張表，回傳 [{_row, 欄位...}]。 */
 function readAll_(t) {
+  if (READ_CACHE_[t.name]) return copyRows_(READ_CACHE_[t.name]);
+  var out = readAllFromSheet_(t);
+  READ_CACHE_[t.name] = out;
+  return copyRows_(out);
+}
+
+function readAllFromSheet_(t) {
   var sh = sheet_(t);
   var rng = sh.getDataRange();
   var vals = rng.getValues(), disp = rng.getDisplayValues();
@@ -169,12 +186,14 @@ function toRowArray_(t, header, obj) {
 }
 
 function append_(t, obj) {
+  delete READ_CACHE_[t.name];
   var sh = sheet_(t);
   sh.appendRow(toRowArray_(t, header_(sh), obj));
 }
 
 function appendMany_(t, objs) {
   if (!objs.length) return;
+  delete READ_CACHE_[t.name];
   var sh = sheet_(t), header = header_(sh);
   var rows = objs.map(function (o) { return toRowArray_(t, header, o); });
   sh.getRange(sh.getLastRow() + 1, 1, rows.length, header.length).setValues(rows);
@@ -182,6 +201,7 @@ function appendMany_(t, objs) {
 
 /** 只更新 patch 裡有的欄位。 */
 function update_(t, rowNum, patch) {
+  delete READ_CACHE_[t.name];
   var sh = sheet_(t), header = header_(sh), idx = colIndex_(t, header);
   t.cols.forEach(function (c) {
     if (patch.hasOwnProperty(c[0]) && idx[c[0]] !== undefined) {

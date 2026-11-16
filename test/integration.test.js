@@ -259,6 +259,34 @@ test('加班：表單 → 申請推播主管 → 主管核准 → 推播申請�
   assert.equal(call('uE1', 'me').data.overtimes.length, 3);
 });
 
+test('加班：推播在資料寫入後平行送出；網路慢重按送出不會多一筆', () => {
+  const { ctx, call, at, pushes } = setup();
+  at('18:00');
+  const body = { date: '2026-11-10', start: '16:50', end: '17:30', reason: '病人延遲下機' };
+  const ap = call('uE1', 'otApply', body);
+  assert.equal(ap.ok, true, ap.error);
+  assert.equal(pushes.length, 1);
+  assert.equal(pushes[0].parallel, true);                 // 走 fetchAll，不是一個一個送
+  // 5 分鐘後重按（例如視窗被關掉、以為沒送出）
+  at('18:05');
+  const again = call('uE1', 'otApply', body);
+  assert.equal(again.ok, true, again.error);
+  assert.equal(again.data.duplicate, true);
+  assert.equal(again.data.overtime.id, ap.data.overtime.id);
+  assert.equal(ctx.readAll_(ctx.TABLES.OT).length, 1);
+  assert.equal(pushes.length, 1);                          // 不重複通知主管
+  // 超過 10 分鐘，同一時段就照原本規則：和自己的待審申請重疊
+  at('18:20');
+  assert.match(call('uE1', 'otApply', body).error, /另一筆/);
+});
+
+test('出錯時不送出排隊中的推播', () => {
+  const { call, at, pushes } = setup();
+  at('18:00');
+  assert.equal(call('uE1', 'otApply', { date: '2026-11-10', start: '16:00', end: '17:00', reason: 'x' }).ok, false);
+  assert.equal(pushes.length, 0);
+});
+
 test('加班審核人：「加班審核」為是的護理師也收得到、能核准，但不能審自己的；提前下班仍是護理師', () => {
   const { ctx, call, at, pushes } = setup();
   const emps = ctx.readAll_(ctx.TABLES.EMP);

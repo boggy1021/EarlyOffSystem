@@ -91,13 +91,27 @@
 
   // ── API ──────────────────────────────────────────────
 
+  var API_TIMEOUT_MS = 45000;   // Apps Script 冷啟動有時要 10 秒以上，留足時間
+
   function api(action, extra) {
     var body = Object.assign({ action: action, idToken: liff.getIDToken() }, extra || {});
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, API_TIMEOUT_MS) : null;
     return fetch(C.API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // 避免 CORS 預檢
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: ctrl ? ctrl.signal : undefined
     }).then(function (r) { return r.json(); }).then(function (j) {
+      if (timer) clearTimeout(timer);
+      return j;
+    }, function () {
+      // 逾時、斷線或伺服器回了看不懂的內容：請求可能已經送到伺服器，也可能沒有
+      if (timer) clearTimeout(timer);
+      var e = new Error('連線太慢或中斷了。申請可能已經送出，請先到「我的申請」確認。');
+      e.code = 'NETWORK';
+      throw e;
+    }).then(function (j) {
       if (j.ok) return j.data;
       if (j.code === 'TOKEN' && !retriedLogin()) {
         liff.logout();
@@ -108,6 +122,31 @@
       e.code = j.code;
       throw e;
     });
+  }
+
+  /** 送出時蓋一層「送出中」畫面，避免以為當掉而關掉視窗。回傳關閉函式。 */
+  function busy(text) {
+    var el = h('div', { class: 'busy', role: 'status', 'aria-live': 'polite' },
+      h('div', { class: 'busy-box' },
+        h('div', { class: 'spinner', 'aria-hidden': 'true' }),
+        h('b', null, text || '送出中…'),
+        h('span', null, '大約需要幾秒鐘，請不要關閉視窗')));
+    document.body.appendChild(el);
+    return function () { if (el.parentNode) el.parentNode.removeChild(el); };
+  }
+
+  // 表單草稿：每次輸入就存在這支手機上，視窗被關掉再打開可以還原
+  function loadDraft(key) {
+    try {
+      var d = JSON.parse(localStorage.getItem(key) || 'null');
+      return d && Date.now() - d.savedAt < 24 * 3600 * 1000 ? d : null;
+    } catch (e) { return null; }
+  }
+  function saveDraft(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(Object.assign({ savedAt: Date.now() }, value))); } catch (e) { /* 忽略 */ }
+  }
+  function clearDraft(key) {
+    try { localStorage.removeItem(key); } catch (e) { /* 忽略 */ }
   }
 
   function retriedLogin() {
@@ -263,27 +302,58 @@
       };
       dateSel.addEventListener('change', pick);
       pick();
+
+      // 還原上次沒送出的內容（視窗被關掉、送出失敗）
+      var DRAFT = 'otDraft';
+      var draft = loadDraft(DRAFT);
+      var restored = null;
+      if (draft && byDate[draft.date]) {
+        dateSel.value = draft.date;
+        pick();
+        start.value = draft.start || start.value;
+        end.value = draft.end || end.value;
+        reason.value = draft.reason || '';
+        restored = msg('warn', '已還原上次還沒送出的內容，確認後再按送出。');
+      }
+      var keep = function () {
+        saveDraft(DRAFT, { date: dateSel.value, start: start.value, end: end.value, reason: reason.value });
+      };
+      [dateSel, start, end, reason].forEach(function (el) {
+        el.addEventListener('input', keep);
+        el.addEventListener('change', keep);
+      });
+
       var btn = h('button', {
         onclick: function () {
           if (!start.value || !end.value) return alert('請填寫加班開始與結束時間。');
           if (!reason.value.trim()) return alert('請填寫加班原因。');
+          keep();
           btn.disabled = true;
+          var done = busy('加班申請送出中…');
           api('otApply', { date: dateSel.value, start: start.value, end: end.value, reason: reason.value })
             .then(function (r) {
-              render(msg('ok', r.notified ? '已送出，等待審核；核准結果會由官方帳號通知您。'
-                                          : '已送出，但目前沒有可通知的審核人，請直接告知主管。'),
+              done();
+              clearDraft(DRAFT);
+              render(msg('ok', r.duplicate ? '這筆申請剛剛已經送出過了，不會重複送出，請等待審核。'
+                             : r.notified ? '已送出，等待審核；核准結果會由官方帳號通知您。'
+                             : '已送出，但目前沒有可通知的審核人，請直接告知主管。'),
                 overtimeCard(r.overtime),
                 h('button', { class: 'secondary', onclick: function () { location.href = liffLink('mine'); } }, '查看我的申請'),
                 closeButton());
             }).catch(function (e) {
-              if (e.code !== 'DENIED') return showError(e);
-              btn.disabled = false;
-              alert(e.message);
+              done();
+              if (e.code === 'DENIED' || e.code === 'NETWORK' || e.code === 'BUSY' || e.code === 'SERVER') {
+                // 表單內容保留；再按一次送出也不會重複（伺服器會認出 10 分鐘內同一筆）
+                btn.disabled = false;
+                return alert(e.message + (e.code === 'DENIED' ? '' : '\n\n內容已保留，可以直接再按一次送出，不會重複申請。'));
+              }
+              showError(e);
             });
         }
       }, '送出加班申請');
       render(
         h('h1', null, '申請加班'),
+        restored,
         h('div', { class: 'card' },
           row('姓名', d.employee.name),
           h('label', null, '日期'), dateSel, shiftInfo,

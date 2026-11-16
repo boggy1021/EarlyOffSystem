@@ -18,10 +18,44 @@ function lineApi_(path, payload) {
   return true;
 }
 
+// API 處理期間的推播先排隊，等資料寫完、鎖放開後再一次平行送出（UrlFetchApp.fetchAll），
+// 不讓申請人等每位審核人的推播一個一個跑完。
+var PUSH_QUEUE_ = null;
+
+function beginPushQueue_() { PUSH_QUEUE_ = []; }
+function discardPushQueue_() { PUSH_QUEUE_ = null; }
+
 /** 推播（計入每月額度）。失敗只記錄，不中斷流程；申請人仍可在小網頁看到結果。 */
 function push_(userId, messages) {
   if (!userId) return false;
+  if (PUSH_QUEUE_) {
+    PUSH_QUEUE_.push({ to: userId, messages: messages });
+    return true;
+  }
   return lineApi_('push', { to: userId, messages: messages });
+}
+
+/** 把排隊中的推播平行送出。 */
+function flushPushQueue_() {
+  var q = PUSH_QUEUE_ || [];
+  PUSH_QUEUE_ = null;
+  if (!q.length) return;
+  var token = prop_('CHANNEL_ACCESS_TOKEN');
+  var res = UrlFetchApp.fetchAll(q.map(function (p) {
+    return {
+      url: 'https://api.line.me/v2/bot/message/push',
+      method: 'post',
+      contentType: 'application/json',
+      headers: { Authorization: 'Bearer ' + token },
+      payload: JSON.stringify(p),
+      muteHttpExceptions: true
+    };
+  }));
+  res.forEach(function (r, i) {
+    if (r.getResponseCode() !== 200) {
+      console.error('LINE push 失敗 ' + r.getResponseCode() + '（' + q[i].to + '）：' + r.getContentText());
+    }
+  });
 }
 
 /** 回覆（不計入額度）。 */

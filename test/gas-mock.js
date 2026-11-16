@@ -125,7 +125,11 @@ function createEnv(opts = {}) {
         }
         pushes.push({ url, body: JSON.parse(o.payload) });
         return { getResponseCode: () => 200, getContentText: () => '{}' };
-      }
+      },
+      fetchAll: (reqs) => reqs.map((r) => {
+        pushes.push({ url: r.url, body: JSON.parse(r.payload), parallel: true });
+        return { getResponseCode: () => 200, getContentText: () => '{}' };
+      })
     },
     ContentService: {
       createTextOutput: (s) => ({ s, setMimeType() { return this; } }),

@@ -14,6 +14,7 @@ function onOpen() {
 
 /** 建立缺少的工作表與欄位；已有的資料不會被清除。 */
 function setupSheets() {
+  clearReadCache_();
   var ss = ss_();
   Object.keys(TABLES).forEach(function (k) {
     var t = TABLES[k];
@@ -86,6 +87,7 @@ function installTriggers() {
 }
 
 function cronExpire() {
+  clearReadCache_();
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(30000)) return;
   try {
