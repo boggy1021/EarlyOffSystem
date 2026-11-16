@@ -1,4 +1,4 @@
-<title>提前下班 圖解小手冊</title>
+<title>提前下班・加班 圖解小手冊</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -157,6 +157,15 @@ section { display: grid; gap: 22px; }
 .picker .send { background: var(--green); color: #fff; border-radius: 10px; text-align: center; padding: 7px; font-weight: 700; }
 .av { width: 30px; height: 30px; border-radius: 50%; background: var(--sky-wash); display: grid; place-items: center; font-size: 13px; color: var(--sky); font-weight: 700; flex: none; }
 
+.liff .in { border: 1.5px solid var(--line); border-radius: 8px; padding: 5px 8px; background: var(--paper); }
+.liff .two { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.liff .no { background: #d64545; color: #fff; border-radius: 10px; text-align: center; padding: 9px; font-weight: 700; }
+.card .k.blue { color: #2563eb; }
+.card .one { padding: 0 10px 10px; }
+.card .one span { display: block; text-align: center; border-radius: 8px; padding: 5px 0; font-weight: 700; font-size: 12px; background: var(--green); color: #fff; outline: 3px solid var(--peach); outline-offset: 1px; }
+.step .txt ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+.num.sky { background: var(--sky); }
+
 /* ── 兩個按鈕 ── */
 .duo { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .choice { border-radius: 24px; padding: 20px; display: grid; gap: 10px; align-content: start; }
@@ -221,9 +230,9 @@ summary:focus-visible, a:focus-visible { outline: 3px solid var(--sky); outline-
 
   <header class="hero">
     <div style="display:grid;gap:16px">
-      <span class="tag">護理師專用・LINE 小幫手</span>
-      <h1>工作做完了？<br>用 LINE 申請提前下班</h1>
-      <p class="lead">按一下送出，<b>2 位會留守的同事</b>點「同意」就核准，官方帳號會通知你。整個流程不用找人簽名，也不用排隊問。</p>
+      <span class="tag">全體同仁・LINE 小幫手</span>
+      <h1>提前下班、加班<br>都用 LINE 申請</h1>
+      <p class="lead">想<b>提前下班</b>：送出後分享到群組，<b>2 位會留守、同職稱的同事</b>按「同意」就核准。<br>有<b>加班</b>：填好時間和原因送出，由<b>主管或加班審核人</b>核准。<br>結果都由官方帳號通知你，不用找人簽名。</p>
     </div>
     <div class="phone" aria-hidden="true">
       <div class="screen">
@@ -232,15 +241,15 @@ summary:focus-visible, a:focus-visible { outline: 3px solid var(--sky); outline-
           <div class="bubble">✅ 您的提前下班申請已核准（16:05），可以下班了。<br><span class="soft" style="font-size:11px">正式下班時間仍以打卡為準。</span></div>
           <div class="bubble me">謝謝大家 🙏</div>
         </div>
-        <div class="menu"><div>我想提前下班</div><div>我的申請</div><div>綁定</div></div>
+        <div class="menu"><div>我想提前下班</div><div>申請加班</div><div>我的申請</div></div>
       </div>
     </div>
   </header>
 
   <div class="facts">
-    <div class="fact"><div class="big">2<small>人</small></div><p><b>2 位同事同意</b>正在上班、而且會留到你表定下班的同事</p></div>
-    <div class="fact"><div class="big">30<small>分鐘</small></div><p><b>30 分鐘內有效</b>沒湊滿 2 人就自動失效，晚點可以再申請</p></div>
-    <div class="fact"><div class="big" style="font-size:24px">打卡<small>為準</small></div><p><b>以打卡為準</b>系統只留核准紀錄，提前下班不扣薪</p></div>
+    <div class="fact"><div class="big">2<small>人</small></div><p><b>提前下班：2 位同事同意</b>正在上班、同職稱、而且會留到你表定下班的同事</p></div>
+    <div class="fact"><div class="big">30<small>分鐘</small></div><p><b>提前下班：30 分鐘內有效</b>沒湊滿 2 人就自動失效，晚點可以再申請</p></div>
+    <div class="fact"><div class="big" style="font-size:24px">打卡<small>為準</small></div><p><b>以打卡為準</b>系統只留核准紀錄；提前下班不扣薪，加班費以打卡核算</p></div>
   </div>
 
   <section>
@@ -253,13 +262,13 @@ summary:focus-visible, a:focus-visible { outline: 3px solid var(--sky); outline-
         <div class="txt">
           <div class="num">1</div>
           <h3>加入員工官方帳號</h3>
-          <p>點管理者給的連結或掃 QR Code 加好友。聊天室下方會出現三個大按鈕，點最右邊的<b>「綁定」</b>。</p>
+          <p>點管理者給的連結或掃 QR Code 加好友。聊天室下方會出現三個大按鈕，<b>點任何一個都可以</b>，第一次會先帶你到綁定畫面。</p>
         </div>
         <div class="phone" aria-hidden="true">
           <div class="screen" style="min-height:220px">
             <div class="bar">員工官方帳號</div>
-            <div class="chat"><div class="bubble">歡迎使用提前下班申請。第一次使用請先點下方選單的「綁定」…</div></div>
-            <div class="menu"><div>我想提前下班</div><div>我的申請</div><div class="hit">綁定</div></div>
+            <div class="chat"><div class="bubble">歡迎使用提前下班／加班申請。第一次使用請點下方選單任一項，依畫面選擇您的名字完成綁定…</div></div>
+            <div class="menu"><div class="hit">我想提前下班</div><div class="hit">申請加班</div><div class="hit">我的申請</div></div>
           </div>
         </div>
       </div>
@@ -306,7 +315,7 @@ summary:focus-visible, a:focus-visible { outline: 3px solid var(--sky); outline-
         <div class="txt">
           <div class="num">1</div>
           <h3>點「我想提前下班」→ 送出申請</h3>
-          <p>畫面會顯示你今天的班別，以及接下來有幾位同事可以同意。確認沒問題就按<b>「送出申請」</b>。</p>
+          <p>畫面會顯示你今天的班別，以及接下來有幾位<b>同職稱</b>的同事可以同意。確認沒問題就按<b>「送出申請」</b>。</p>
         </div>
         <div class="phone" aria-hidden="true">
           <div class="screen" style="min-height:250px">
@@ -394,8 +403,8 @@ summary:focus-visible, a:focus-visible { outline: 3px solid var(--sky); outline-
   <section>
     <div class="sec-head">
       <span class="tag">誰的同意算數</span>
-      <h2>要「正在上班」，而且「會留下來」</h2>
-      <p class="soft">例子：小美上 7-5，下午 14:40 申請提前下班。這時候誰按同意才算？</p>
+      <h2>要「同職稱」「正在上班」，而且「會留下來」</h2>
+      <p class="soft">例子：護理師小美上 7-5，下午 14:40 申請提前下班。這時候哪些護理師按同意才算？</p>
     </div>
     <div class="timeline" role="img" aria-label="14:40 申請時，7-5、開門班、11-5、E 班的同事可以同意；7-3 的同事 14:50 就下班，不算">
       <div class="tl">
@@ -420,6 +429,7 @@ summary:focus-visible, a:focus-visible { outline: 3px solid var(--sky); outline-
       <div class="rule y">
         <h3>算</h3>
         <ul>
+          <li>和你同職稱：護理師同意護理師、行政同意行政</li>
           <li>按下時正在上班的同事，不分班別、不分五六樓</li>
           <li>表定下班不比申請人早超過 15 分鐘（11-5 遇到 7-5 也算）</li>
           <li>開門班和同班別的人一樣算</li>
@@ -429,10 +439,132 @@ summary:focus-visible, a:focus-visible { outline: 3px solid var(--sky); outline-
         <h3>不算</h3>
         <ul>
           <li>申請人自己</li>
+          <li>不同職稱的人，例如行政不能同意護理師</li>
           <li>還沒上班、已經下班、今天休假的人</li>
           <li>比申請人早下班的人，例如 7-3 不能同意 7-5</li>
           <li>自己今天已經核准提前下班的人</li>
           <li>同一個人按第二次</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note"><b>行政人員的申請：</b>行政同仁只有 3 位，所以<b>主管按「同意」也算一票</b>（主管不用排班），一位行政同事加上主管就能核准。</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="tag">事前申請、事後補登都可以</span>
+      <h2>申請加班</h2>
+      <p class="soft">可以申請今天的加班，也可以補登 7 天內的加班；不能申請未來的日期。休假日來加班也可以申請。</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="txt">
+          <div class="num">1</div>
+          <h3>點「申請加班」，填日期、時間和原因</h3>
+          <p>畫面會帶出當天的班別，並預先填好建議的加班時間，自己再調整。原因簡單寫一句就好。</p>
+          <ul>
+            <li>加班時段<b>不能和上班時間重疊</b>，也不能跨過半夜 12 點。</li>
+            <li>行政、清潔同仁的<b>午休</b>如果有工作，也可以申請。</li>
+            <li>同一天可以申請好幾筆，但時段不能重疊。</li>
+          </ul>
+        </div>
+        <div class="phone" aria-hidden="true">
+          <div class="screen" style="min-height:300px">
+            <div class="liff">
+              <div class="t">申請加班</div>
+              <div class="box">
+                <span class="soft">日期</span><div class="sel"><span>11/16（一） 今天</span><span>▾</span></div>
+                <span class="soft" style="font-size:11px">當天班別 06:50–16:50；加班時段不能和上班時間重疊。</span>
+                <div class="two"><div><span class="soft">加班開始</span><div class="in">16:50</div></div><div><span class="soft">加班結束</span><div class="in">17:40</div></div></div>
+                <span class="soft">原因</span><div class="in">病人延遲下機</div>
+              </div>
+              <div class="go">送出加班申請</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="txt">
+          <div class="num">2</div>
+          <h3>送出後等審核，不用分享到群組</h3>
+          <p>系統會自動通知<b>主管和加班審核人（護理長、組長）</b>，最先決定的人為準。核准或不核准，官方帳號都會通知你；審核人有寫意見的話也會一起附上。</p>
+          <p class="note">還沒決定前想取消？到<b>「我的申請」</b>的「加班」區按「取消加班申請」。已經決定的就不能取消，請直接找主管。</p>
+        </div>
+        <div class="phone" aria-hidden="true">
+          <div class="screen" style="min-height:220px">
+            <div class="bar">員工官方帳號</div>
+            <div class="chat">
+              <div class="bubble">✅ 陳主管 已核准您的加班申請（11/16 16:50–17:40）。<br>審核意見：辛苦了，記得打卡。<br><span class="soft" style="font-size:11px">加班費仍以打卡紀錄核算。</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="tag">主管・加班審核人</span>
+      <h2>給審核的人：怎麼核准</h2>
+      <p class="soft">加班審核人是主管，以及護理長、人力組組長、器材組組長。一般同仁可以跳過這一節。</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="txt">
+          <div class="num sky">1</div>
+          <h3>收到加班卡片，點「查看並決定」</h3>
+          <p>有人申請加班時，官方帳號會傳一張藍色標題的卡片給你，上面有日期、班別、加班時段和原因。</p>
+          <p class="note">別人已經先決定了，畫面會顯示目前的結果，不用再按。自己的加班不能自己核准，要由其他審核人決定。</p>
+        </div>
+        <div class="phone" aria-hidden="true">
+          <div class="screen" style="min-height:250px">
+            <div class="bar">員工官方帳號</div>
+            <div class="chat">
+              <div class="card">
+                <div class="in">
+                  <span class="k blue">加班申請・需要主管決定</span>
+                  <span class="name">王小美</span>
+                  <span class="row"><span>日期</span><span>2026-11-16</span></span>
+                  <span class="row"><span>加班</span><span>16:50–17:40（50 分）</span></span>
+                  <span class="row"><span>原因</span><span>病人延遲下機</span></span>
+                </div>
+                <div class="one"><span>查看並決定</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="txt">
+          <div class="num sky">2</div>
+          <h3>可以寫審核意見，再按「准」或「不准」</h3>
+          <p>審核意見可以不填；有填的話，會和結果一起通知申請人，例如「請記得打卡」「下次請事先告知」。</p>
+        </div>
+        <div class="phone" aria-hidden="true">
+          <div class="screen" style="min-height:250px">
+            <div class="liff">
+              <div class="t">加班申請・審核</div>
+              <div class="box"><span class="soft">審核意見（選填）</span><div class="in" style="min-height:44px">辛苦了，記得打卡。</div><span class="soft" style="font-size:11px">填寫的內容會一起通知申請人。</span></div>
+              <div class="go">准</div>
+              <div class="no">不准</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="rules">
+      <div class="rule">
+        <h3>提前下班的「通知主管」</h3>
+        <ul>
+          <li>同事按了「通知主管」，主管會收到通知，進去按「准」或「不准」。</li>
+          <li>最先決定的主管為準。</li>
+        </ul>
+      </div>
+      <div class="rule">
+        <h3>行政人員的提前下班</h3>
+        <ul>
+          <li>主管在群組看到行政同仁的申請卡片，按「同意」就算一票。</li>
+          <li>護理長、組長的審核權限只限加班，提前下班仍照一般同仁的規則。</li>
         </ul>
       </div>
     </div>
@@ -446,11 +578,14 @@ summary:focus-visible, a:focus-visible { outline: 3px solid var(--sky); outline-
     <div class="faq">
       <details><summary>顯示「您今天沒有排班」</summary><p>班表上沒有你今天的班。臨時調班的話，請找管理者更新班表。</p></details>
       <details><summary>顯示「還沒到上班時間」或「已過表定下班時間」</summary><p>只能在自己的上班時段內申請。</p></details>
-      <details><summary>顯示「可以同意的同仁只有 1 位」</summary><p>接下來在班、會留守的同事不到 2 位，系統沒辦法核准，請直接問主管。</p></details>
+      <details><summary>顯示「可以同意的同仁只有 1 位」</summary><p>接下來在班、同職稱、會留守的同事不到 2 位，系統沒辦法核准，請直接問主管。</p></details>
       <details><summary>顯示「您已經有一筆進行中的申請」</summary><p>同一時間只能有一筆。到「我的申請」查看進度，或先取消再重新申請。</p></details>
       <details><summary>30 分鐘到了還沒湊滿 2 人</summary><p>申請會自動失效，不會另外通知。晚一點可以再申請一次。</p></details>
       <details><summary>我的申請被「通知主管」了</summary><p>等主管決定，結果會由官方帳號通知你。你看不到是誰按的。</p></details>
       <details><summary>一直沒收到核准通知</summary><p>到「我的申請」看狀態，也確認自己沒有封鎖員工官方帳號。</p></details>
+      <details><summary>加班顯示「不能和表定上班時間重疊」</summary><p>加班只算上班時間以外的部分。例如 7-5 的人，加班要從 16:50 以後開始填。</p></details>
+      <details><summary>加班顯示「只能補登 7 天內的加班」</summary><p>超過 7 天的加班，請直接找主管處理。</p></details>
+      <details><summary>加班的時間填錯了</summary><p>還沒審核前，到「我的申請」取消，再重新申請一筆。已經審核過的，請找主管。</p></details>
       <details><summary>畫面出現「登入已過期」</summary><p>關掉小網頁，再從下方選單重新打開。</p></details>
     </div>
   </section>

@@ -35,13 +35,13 @@ PRINT_CSS = """<style>
 .wrap, section, .steps, .faq { display: block; }
 .wrap > * + * { margin-top: 34px; }
 section > * + *, .steps > * + * { margin-top: 16px; }
-.faq > * + * { margin-top: 6px; }
+.faq > * + * { margin-top: 4px; }
 .hero .phone { animation: none !important; }
 details > summary::before { content: "" !important; width: 0; }
 .faq { gap: 6px; }
 details { padding: 0 14px; }
-summary { padding: 7px 0 2px; }
-details p { padding: 0 0 7px 0; }
+summary { padding: 5px 0 0; }
+details p { padding: 0 0 5px 0; }
 .end { display: none; }
 .faq::after { content: "有問題或畫面出現錯誤，截圖傳給管理者就好。"; color: var(--green-deep); font-weight: 700; padding: 6px 4px 0; }
 </style>
