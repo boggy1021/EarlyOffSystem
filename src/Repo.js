@@ -55,7 +55,8 @@ var TABLES = {
       ['shiftStart', '表定上班', 'time'], ['shiftEnd', '表定下班', 'time'],
       ['start', '加班開始', 'time'], ['end', '加班結束', 'time'], ['minutes', '加班分鐘'],
       ['reason', '原因'], ['createdAt', '申請時間', 'ts'], ['status', '狀態'],
-      ['supervisorEmpId', '主管編號'], ['supervisorName', '主管姓名'], ['decidedAt', '決定時間', 'ts']
+      ['supervisorEmpId', '主管編號'], ['supervisorName', '主管姓名'], ['decidedAt', '決定時間', 'ts'],
+      ['decisionNote', '審核意見']
     ]
   },
   SETTINGS: {
@@ -185,6 +186,24 @@ function toRowArray_(t, header, obj) {
   return row;
 }
 
+/**
+ * 新版加了欄位、但管理者還沒重新「初始化工作表」時，要寫入的值不能默默丟掉：
+ * 把缺少的欄位表頭補在最後面。回傳更新後的表頭。
+ */
+function ensureCols_(t, sh, header, obj) {
+  var idx = colIndex_(t, header), missing = [];
+  t.cols.forEach(function (c) {
+    if (idx[c[0]] === undefined && obj.hasOwnProperty(c[0]) && obj[c[0]] !== '' && obj[c[0]] != null) {
+      missing.push(c[1]);
+    }
+  });
+  if (!missing.length) return header;
+  var last = 0;
+  header.forEach(function (h, i) { if (String(h) !== '') last = i + 1; });
+  sh.getRange(1, last + 1, 1, missing.length).setValues([missing]);
+  return header_(sh);
+}
+
 function append_(t, obj) {
   delete READ_CACHE_[t.name];
   var sh = sheet_(t);
@@ -202,7 +221,7 @@ function appendMany_(t, objs) {
 /** 只更新 patch 裡有的欄位。 */
 function update_(t, rowNum, patch) {
   delete READ_CACHE_[t.name];
-  var sh = sheet_(t), header = header_(sh), idx = colIndex_(t, header);
+  var sh = sheet_(t), header = ensureCols_(t, sh, header_(sh), patch), idx = colIndex_(t, header);
   t.cols.forEach(function (c) {
     if (patch.hasOwnProperty(c[0]) && idx[c[0]] !== undefined) {
       sh.getRange(rowNum, idx[c[0]] + 1).setValue(writeCell_(c[2], patch[c[0]]));
@@ -293,7 +312,8 @@ function overtimeFromRow_(r) {
     _row: r._row, id: r.id, empId: r.empId, name: r.name, date: r.date,
     shiftStart: t(r.shiftStart), shiftEnd: t(r.shiftEnd), start: t(r.start), end: t(r.end),
     reason: r.reason, createdMs: r.createdAt, status: r.status,
-    supervisorEmpId: r.supervisorEmpId, supervisorName: r.supervisorName, decidedMs: r.decidedAt
+    supervisorEmpId: r.supervisorEmpId, supervisorName: r.supervisorName, decidedMs: r.decidedAt,
+    decisionNote: r.decisionNote || ''
   };
 }
 

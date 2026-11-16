@@ -341,7 +341,8 @@ function otSummary_(ot) {
     start: minToHm(ot.start), end: minToHm(ot.end), minutes: ot.end - ot.start, reason: ot.reason,
     createdAt: ot.createdMs ? fmt_(new Date(ot.createdMs), 'MM/dd HH:mm') : '',
     decidedBy: ot.supervisorName || '',
-    decidedAt: ot.decidedMs ? fmt_(new Date(ot.decidedMs), 'MM/dd HH:mm') : ''
+    decidedAt: ot.decidedMs ? fmt_(new Date(ot.decidedMs), 'MM/dd HH:mm') : '',
+    decisionNote: ot.decisionNote || ''
   };
 }
 
@@ -466,18 +467,24 @@ function apiOtDecide_(who, body) {
   var chk = checkCanDecideOvertime(ot, sup.empId);
   if (!chk.ok) throw apiError_('DENIED', chk.reason);
   var ok = body.approve === true, nowMs = Date.now();
+  // 審核意見選填，會一起通知申請人
+  var note = String(body.note || '').trim().slice(0, OT_REASON_MAX);
   ot.status = ok ? STATUS.APPROVED : STATUS.REJECTED;
   ot.supervisorEmpId = sup.empId;
   ot.supervisorName = sup.name;
   ot.decidedMs = nowMs;
+  ot.decisionNote = note;
   update_(TABLES.OT, ot._row, {
-    status: ot.status, supervisorEmpId: sup.empId, supervisorName: sup.name, decidedAt: nowMs
+    status: ot.status, supervisorEmpId: sup.empId, supervisorName: sup.name, decidedAt: nowMs,
+    decisionNote: note
   });
   var applicant = findEmployee_(ot.empId);
   var what = ot.date.slice(5).replace('-', '/') + ' ' + minToHm(ot.start) + '–' + minToHm(ot.end);
-  push_(applicant && applicant.userId, [textMsg_(ok
-    ? '✅ ' + sup.name + ' 已核准您的加班申請（' + what + '）。\n加班費仍以打卡紀錄核算。'
-    : sup.name + ' 這次沒有核准您的加班申請（' + what + '）。如有疑問請直接詢問。')]);
+  push_(applicant && applicant.userId, [textMsg_((ok
+    ? '✅ ' + sup.name + ' 已核准您的加班申請（' + what + '）。'
+    : sup.name + ' 這次沒有核准您的加班申請（' + what + '）。') +
+    (note ? '\n審核意見：' + note : '') +
+    (ok ? '\n加班費仍以打卡紀錄核算。' : '\n如有疑問請直接詢問。'))]);
   return { overtime: otSummary_(ot) };
 }
 

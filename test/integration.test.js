@@ -280,6 +280,28 @@ test('加班：推播在資料寫入後平行送出；網路慢重按送出不�
   assert.match(call('uE1', 'otApply', body).error, /另一筆/);
 });
 
+test('加班審核意見：選填；有填會存表、顯示在申請紀錄並通知申請人；舊表沒有欄位會自動補上', () => {
+  const { ctx, ss, call, at, pushes } = setup();
+  // 模擬還沒重新初始化的舊表：拿掉「審核意見」表頭
+  const sh = ss.getSheetByName('加班申請');
+  const col = sh.data[0].indexOf('審核意見');
+  sh.data[0].splice(col, 1);
+  at('18:00');
+  const a = call('uE1', 'otApply', { date: '2026-11-10', start: '16:50', end: '17:30', reason: '下機' }).data.overtime.id;
+  const b = call('uE2', 'otApply', { date: '2026-11-10', start: '16:50', end: '17:30', reason: '下機' }).data.overtime.id;
+  const n0 = pushes.length;
+  const da = call('uS1', 'otDecide', { id: a, approve: false, note: '  下次請事先告知 ' });
+  assert.equal(da.data.overtime.decisionNote, '下次請事先告知');
+  assert.match(pushText(pushes[n0]), /沒有核准.*審核意見：下次請事先告知/);
+  assert.ok(sh.data[0].includes('審核意見'));               // 表頭自動補上
+  assert.equal(call('uE1', 'me').data.overtimes[0].decisionNote, '下次請事先告知');
+  // 不填也可以
+  const db = call('uS1', 'otDecide', { id: b, approve: true });
+  assert.equal(db.ok, true, db.error);
+  assert.equal(db.data.overtime.decisionNote, '');
+  assert.doesNotMatch(pushText(pushes[n0 + 1]), /審核意見/);
+});
+
 test('出錯時不送出排隊中的推播', () => {
   const { call, at, pushes } = setup();
   at('18:00');

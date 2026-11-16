@@ -86,6 +86,7 @@
       row('原因', o.reason),
       row('申請時間', o.createdAt),
       o.decidedAt ? row(o.decidedBy + ' 決定', o.decidedAt) : null,
+      o.decisionNote ? row('審核意見', o.decisionNote) : null,
       extra || null);
   }
 
@@ -372,17 +373,21 @@
       if (!d.canDecide.ok) {
         parts.push(msg('warn', d.canDecide.reason));
       } else {
+        var note = h('textarea', { maxlength: '200', placeholder: '例如：請記得打卡、下次請事先告知（可不填）' });
         var go = function (approve) {
           return function () {
             if (!confirm(approve ? '確定核准這筆加班？' : '確定不核准這筆加班？')) return;
             loading('處理中…');
-            api('otDecide', { id: id, approve: approve }).then(function (x) {
+            api('otDecide', { id: id, approve: approve, note: note.value }).then(function (x) {
               render(msg('ok', '已' + (approve ? '核准' : '不核准') + '，系統已通知申請人。'),
                 overtimeCard(x.overtime), closeButton());
             }).catch(showError);
           };
         };
-        parts.push(h('button', { onclick: go(true) }, '准'),
+        parts.push(h('div', { class: 'card' },
+                     h('label', null, '審核意見（選填）'), note,
+                     h('p', { class: 'muted' }, '填寫的內容會一起通知申請人。')),
+                   h('button', { onclick: go(true) }, '准'),
                    h('button', { class: 'danger', onclick: go(false) }, '不准'));
       }
       parts.push(closeButton());
