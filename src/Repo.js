@@ -77,7 +77,8 @@ var SETTING_DEFAULTS = [
   ['留守寬容分鐘', 15, '同意者的表定下班最多可以比申請人早幾分鐘（例如 11-5 申請時 7-5 仍可同意）'],
   ['群組名稱', '淨新洗腎室', '申請頁提示要分享到哪個 LINE 群組（只填名稱，畫面會顯示成「淨新洗腎室」群組）'],
   ['加班補登天數', 7, '加班申請最多可以補登幾天前（0 = 只能申請今天）'],
-  ['班表檔案ID', '', 'Google Drive 上排班表 xlsx 的檔案 ID 或網址（匯入班表時會自動更新）']
+  ['班表檔案ID', '', 'Google Drive 上排班表 xlsx 的檔案 ID 或網址（匯入班表時會自動更新）'],
+  ['上次自動匯入', '', '每天清晨自動匯入班表的結果（系統寫入，不用改）']
 ];
 
 function ss_() {
@@ -242,7 +243,8 @@ function settings_() {
     toleranceMin: isNaN(parseInt(out['留守寬容分鐘'], 10)) ? 15 : parseInt(out['留守寬容分鐘'], 10),
     groupName: String(out['群組名稱'] || ''),
     otBackDays: isNaN(parseInt(out['加班補登天數'], 10)) ? 7 : Math.max(0, parseInt(out['加班補登天數'], 10)),
-    scheduleFileId: String(out['班表檔案ID'] || '')
+    scheduleFileId: String(out['班表檔案ID'] || ''),
+    lastAutoImport: String(out['上次自動匯入'] || '')
   };
 }
 

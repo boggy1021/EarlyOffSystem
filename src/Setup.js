@@ -8,7 +8,8 @@ function onOpen() {
     .addSeparator()
     .addItem('初始化工作表', 'setupSheets')
     .addItem('設定 LINE 金鑰…', 'menuSetSecrets')
-    .addItem('安裝逾時觸發器', 'installTriggers')
+    .addItem('安裝自動排程（逾時檢查、每日匯入班表）', 'installTriggers')
+    .addItem('立即執行一次自動匯入', 'menuRunAutoImport')
     .addToUi();
 }
 
@@ -77,13 +78,30 @@ function menuSetSecrets() {
   ui.alert('已儲存。');
 }
 
-/** 每 5 分鐘把逾時的申請改成已失效（API 呼叫時也會檢查，這裡讓試算表狀態即時）。 */
+/**
+ * 安裝時間觸發器（重複執行不會裝出兩份）：
+ * - 每 5 分鐘把逾時的申請改成已失效（API 呼叫時也會檢查，這裡讓試算表狀態即時）。
+ * - 每天 AUTO_IMPORT_HOUR 點自動匯入班表。
+ */
 function installTriggers() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
-    if (t.getHandlerFunction() === 'cronExpire') ScriptApp.deleteTrigger(t);
+    var fn = t.getHandlerFunction();
+    if (fn === 'cronExpire' || fn === 'cronImportSchedule') ScriptApp.deleteTrigger(t);
   });
   ScriptApp.newTrigger('cronExpire').timeBased().everyMinutes(5).create();
-  try { SpreadsheetApp.getUi().alert('已安裝：每 5 分鐘檢查逾時申請。'); } catch (e) { /* 編輯器執行 */ }
+  ScriptApp.newTrigger('cronImportSchedule').timeBased().everyDays(1).atHour(AUTO_IMPORT_HOUR).create();
+  try {
+    SpreadsheetApp.getUi().alert('已安裝：\n・每 5 分鐘檢查逾時申請\n・每天 ' + AUTO_IMPORT_HOUR +
+      ' 點左右自動匯入班表（上個月、這個月、下個月；排班表沒變更就略過）');
+  } catch (e) { /* 編輯器執行 */ }
+}
+
+/** 選單：不等明天，馬上跑一次自動匯入（排班表沒變更也會重新匯入）。 */
+function menuRunAutoImport() {
+  PropertiesService.getScriptProperties().deleteProperty(AUTO_IMPORT_STATE_KEY);
+  cronImportSchedule();
+  clearReadCache_();
+  SpreadsheetApp.getUi().alert('自動匯入完成', settings_().lastAutoImport || '（沒有結果）', SpreadsheetApp.getUi().ButtonSet.OK);
 }
 
 function cronExpire() {

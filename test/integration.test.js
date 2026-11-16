@@ -402,6 +402,79 @@ test('行政提前下班：一位行政同仁 + 主管同意就核准；護理�
   assert.match(call('uA3', 'me').data.canApply.reason, /（加上主管 1 位）只有 1 位/);
 });
 
+test('每日自動匯入：上／本／下個月、沒變更就略過、跨年找同資料夾的新年度檔、有問題推播主管', () => {
+  const { ctx, clock, pushes } = setup();
+  const grid = ctx.readXlsxSheet_();                       // setup 用的 11/10 班表（含兼職的 V）
+  ctx.setSetting_('班表檔案ID', 'https://drive.google.com/file/d/BASEFILE115xxxxxxxxxxxxxxxx/view');
+  const files = {
+    BASEFILE115xxxxxxxxxxxxxxxx: { name: '115年排班表.xlsx', modified: 't1' },
+    FILE116xxxxxxxxxxxxxxxxxxxx: { name: '116年排班表.xlsx', modified: 'u1' }
+  };
+  const meta = (id) => ({ id, name: files[id].name, parents: ['folder'], modified: files[id].modified });
+  ctx.driveMeta_ = meta;
+  const finds = [];
+  ctx.driveFind_ = (parent, name) => {
+    finds.push(name);
+    const id = Object.keys(files).find((k) => files[k].name === name);
+    return id ? meta(id) : null;
+  };
+  const reads = [];
+  ctx.readXlsxSheets_ = (id, names) => {
+    reads.push(id + ':' + names.join(','));
+    const out = {};
+    names.forEach((n) => { out[n] = n === '11511' || n === '11601' ? grid : null; });
+    return out;
+  };
+  const last = () => ctx.settings_().lastAutoImport;
+
+  assert.deepEqual([...ctx.autoImportMonths('2026-12-05').map((m) => m.sheet)], ['11511', '11512', '11601']);
+  assert.deepEqual([...ctx.autoImportMonths('2027-01-31').map((m) => m.sheet)], ['11512', '11601', '11602']);
+
+  clock.now = Date.UTC(2026, 10, 15, 21, 0);               // 11/16 05:00
+  ctx.cronImportSchedule();
+  assert.deepEqual(reads, ['BASEFILE115xxxxxxxxxxxxxxxx:11510,11511,11512']);   // 一次轉檔讀三個月
+  assert.match(last(), /11511 6 筆/);
+  assert.equal(pushes.length, 1);                          // 兼職的 V 無法辨識 → 通知主管
+  assert.equal(pushes[0].body.to, 'uS1');
+  assert.match(JSON.stringify(pushes[0].body), /無法辨識的代號/);
+
+  ctx.cronImportSchedule();                                // 隔天，檔案沒變
+  assert.equal(reads.length, 1);
+  assert.match(last(), /115年沒有變更/);
+  assert.equal(pushes.length, 1);
+
+  files.BASEFILE115xxxxxxxxxxxxxxxx.modified = 't2';       // 有人改了排班表
+  ctx.cronImportSchedule();
+  assert.equal(reads.length, 2);
+
+  // 12 月：下個月在 116 年的檔
+  clock.now = Date.UTC(2026, 11, 4, 21, 0);
+  ctx.cronImportSchedule();
+  assert.ok(finds.includes('116年排班表.xlsx'));
+  assert.ok(reads.includes('FILE116xxxxxxxxxxxxxxxxxxxx:11601'));
+  assert.ok(reads.includes('BASEFILE115xxxxxxxxxxxxxxxx:11511,11512'));
+  assert.ok(ctx.readAll_(ctx.TABLES.SCHED).some((r) => r.date === '2027-01-10'));
+
+  // 讀檔失敗 → 通知主管，下次會重試
+  files.BASEFILE115xxxxxxxxxxxxxxxx.modified = 't3';
+  ctx.readXlsxSheets_ = () => { throw new Error('Drive 暫時無法存取'); };
+  const n = pushes.length;
+  ctx.cronImportSchedule();
+  assert.match(JSON.stringify(pushes[n].body), /115 年排班表自動匯入失敗：Drive 暫時無法存取/);
+  assert.match(last(), /115年失敗/);
+});
+
+test('自動匯入：當月的年度檔找不到要通知', () => {
+  const { ctx, clock, pushes } = setup();
+  ctx.setSetting_('班表檔案ID', 'BASEFILE115xxxxxxxxxxxxxxxx');
+  ctx.driveMeta_ = (id) => ({ id, name: '115年排班表.xlsx', parents: ['folder'], modified: 't' });
+  ctx.driveFind_ = () => null;
+  ctx.readXlsxSheets_ = (id, names) => Object.fromEntries(names.map((n) => [n, null]));
+  clock.now = Date.UTC(2027, 0, 4, 21, 0);                  // 2027-01-05
+  ctx.cronImportSchedule();
+  assert.match(JSON.stringify(pushes[0].body), /找不到「116年排班表.xlsx」/);
+});
+
 test('綁定：選名字 → 待確認 → 不能使用；已確認後不能改', () => {
   const { ctx, call, at } = setup();
   at('15:00');
