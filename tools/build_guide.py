@@ -3,7 +3,7 @@
 原稿：guide/guide.fragment.html（也是 Claude Artifact 發布的那一份，沒有 <html>/<head> 外殼）
 輸出：
   liff/guide.html            → GitHub Pages：https://boggy1021.github.io/EarlyOffSystem/guide.html
-  output/提前下班圖解小手冊.pdf → 用 Edge 無頭模式列印（output/ 不進 git）
+  output/提前下班與加班圖解小手冊.pdf → 用 Edge 無頭模式列印（output/ 不進 git）
 
 用法：python tools/build_guide.py [--no-pdf]
 """
@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / 'guide' / 'guide.fragment.html'
 WEB = ROOT / 'liff' / 'guide.html'
-PDF = ROOT / 'output' / '提前下班圖解小手冊.pdf'
+PDF = ROOT / 'output' / '提前下班與加班圖解小手冊.pdf'
 EDGE = Path(r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe')
 
 HEAD = """<!doctype html>
