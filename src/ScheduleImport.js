@@ -4,6 +4,30 @@
  * 也可以直接手動修改「班表」工作表）。
  */
 
+/**
+ * 行政、清潔人員在大排班表底部只寫「V」（上班）／off，時段依「員工」表的角色決定
+ * （和加班費專案 config.STAFF_SHIFTS 相同，2026-11-16 使用者確認）。
+ * 午休可以申請加班（沒申請就是休息）；行政週二、四、六可以 16:30 走，但 16:30–17:30
+ * 仍算上班時間，不能申請加班，所以表定下班一律 17:30。
+ */
+var STAFF_WORK_CODE = 'V';
+var STAFF_SHIFTS = {
+  '行政人員': { start: '08:30', end: '17:30', breakStart: '12:00', breakEnd: '13:00',
+               earlyOut: { 2: '週二 16:30 可下班', 4: '週四 16:30 可下班', 6: '週六 16:30 可下班' } },
+  '清潔人員': { start: '07:30', end: '16:30', breakStart: '12:00', breakEnd: '13:00', earlyOut: {} }
+};
+
+function staffShiftRow_(p, empId, s) {
+  var d = p.date.split('-').map(Number);
+  var wd = new Date(Date.UTC(d[0], d[1] - 1, d[2])).getUTCDay();
+  return {
+    date: p.date, empId: empId, name: p.name,
+    start: s.start, end: s.end, baseStart: s.start, baseEnd: s.end,
+    breakStart: s.breakStart, breakEnd: s.breakEnd,
+    raw: p.raw, note: s.earlyOut[wd] || ''
+  };
+}
+
 function extractDriveId_(s) {
   var m = /[-\w]{25,}/.exec(String(s || ''));
   return m ? m[0] : '';
@@ -62,12 +86,17 @@ function importSchedule(fileId, sheetName) {
     });
     appendMany_(TABLES.EMP, created);
 
+    var roleOf = {};
+    emps.concat(created).forEach(function (e) { roleOf[e.empId] = e.role; });
     var unknown = [];
     var rows = parsed.filter(function (p) { return !p.off; }).map(function (p) {
+      var empId = byName[p.name];
+      var staff = p.unknown && p.raw === STAFF_WORK_CODE ? STAFF_SHIFTS[roleOf[empId]] : null;
+      if (staff) return staffShiftRow_(p, empId, staff);
       if (p.unknown) unknown.push(p.name + ' ' + p.date.slice(5) + '「' + p.raw.replace(/\n/g, ' ') + '」');
       var note = [p.opener ? '開門' : '', p.note, p.unknown ? '無法辨識' : ''].filter(Boolean).join('；');
       return {
-        date: p.date, empId: byName[p.name], name: p.name,
+        date: p.date, empId: empId, name: p.name,
         start: minToHm(p.start), end: minToHm(p.end),
         baseStart: minToHm(p.baseStart), baseEnd: minToHm(p.baseEnd),
         raw: p.raw.replace(/\n/g, ' '), note: note
@@ -81,11 +110,8 @@ function importSchedule(fileId, sheetName) {
              created.map(function (e) { return e.name; }).join('、');
     }
     if (unknown.length) {
-      // 兼職的 V 不列出明細，只計數
-      var v = unknown.filter(function (s) { return /「V」$/.test(s); }).length;
-      var others = unknown.filter(function (s) { return !/「V」$/.test(s); });
-      msg += '\n\n無法辨識的代號（不會算進任何一班）：' + (v ? 'V × ' + v + ' 格' : '');
-      if (others.length) msg += '\n' + others.slice(0, 30).join('\n') + (others.length > 30 ? '\n…' : '');
+      msg += '\n\n無法辨識的代號（不會算進任何一班；行政、清潔人員的 V 要先在「員工」表設好角色）：\n' +
+             unknown.slice(0, 30).join('\n') + (unknown.length > 30 ? '\n…' : '');
     }
     return { message: msg };
   });
@@ -111,7 +137,9 @@ function readXlsxSheet_(fileId, sheetName) {
 function replaceMonth_(ym, rows) {
   delete READ_CACHE_[TABLES.SCHED.name];
   var sh = sheet_(TABLES.SCHED);
-  var header = header_(sh);
+  // 舊表沒有「午休開始／結束」欄時自動補上，免得行政、清潔的午休被丟掉
+  var withBreak = rows.filter(function (r) { return r.breakStart; })[0];
+  var header = withBreak ? ensureCols_(TABLES.SCHED, sh, header_(sh), withBreak) : header_(sh);
   var keep = readAll_(TABLES.SCHED).filter(function (r) { return r.date.slice(0, 7) !== ym; });
   var all = keep.concat(rows).sort(function (a, b) {
     return a.date < b.date ? -1 : a.date > b.date ? 1 : String(a.empId) < String(b.empId) ? -1 : 1;

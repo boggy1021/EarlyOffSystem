@@ -296,7 +296,9 @@
       var pick = function () {
         var x = byDate[dateSel.value];
         shiftInfo.textContent = x.shift
-          ? '當天班別 ' + x.shift.start + '–' + x.shift.end + '；加班時段不能和上班時間重疊。'
+          ? '當天班別 ' + x.shift.start + '–' + x.shift.end +
+            (x.shift.breakStart ? '（午休 ' + x.shift.breakStart + '–' + x.shift.breakEnd + ' 有工作可申請加班）' : '') +
+            '；加班時段不能和上班時間重疊。'
           : '當天沒有排班（休假加班）。';
         start.value = x.defaults.start;
         end.value = x.defaults.end;

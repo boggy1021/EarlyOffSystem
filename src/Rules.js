@@ -85,8 +85,9 @@ function checkCanApply(ctx) {
   if (ctx.eligibleCount < ctx.threshold) {
     return {
       ok: false,
-      reason: '接下來 ' + ctx.windowMin + ' 分鐘內在班、會留到您表定下班的同職稱同仁只有 ' + ctx.eligibleCount +
-              ' 位，未達 ' + ctx.threshold + ' 人門檻，請直接詢問主管。'
+      reason: '接下來 ' + ctx.windowMin + ' 分鐘內在班、會留到您表定下班的同職稱同仁' +
+              (ctx.supervisorCount ? '（加上主管 ' + ctx.supervisorCount + ' 位）' : '') +
+              '只有 ' + ctx.eligibleCount + ' 位，未達 ' + ctx.threshold + ' 人門檻，請直接詢問主管。'
     };
   }
   return { ok: true };
@@ -101,13 +102,18 @@ function computeExpiry(createdMs, timeoutMin, shiftEndMs) {
  * 某人點「同意」或「通知主管」時，是否有資格：按下的那一刻正在上班（不限同一班別），
  * 而且表定下班不早於申請人表定下班前 toleranceMin 分鐘（會留守的人才算）。
  * 另外必須和申請人同職稱（護理師只能同意護理師、行政人員只能同意行政人員）。
+ * 例外：supervisorVotes（行政人員的申請，主管按同意算一票）時，主管不看班表、不看留守。
  * ctx: {request, voter: 申請日當天的班表|null, voterEmpId, voterApprovedToday: bool, now, toleranceMin,
- *       voterRole, applicantRole}
+ *       voterRole, applicantRole, supervisorVotes: bool}
  * 回傳 {ok: true} 或 {ok: false, reason}
  */
 function checkColleague(ctx) {
   var r = ctx.request, v = ctx.voter, now = ctx.now;
   if (ctx.voterEmpId === r.empId) return { ok: false, reason: '您是申請人本人，無法操作。' };
+  if (ctx.supervisorVotes) {
+    if (now.date !== r.date) return { ok: false, reason: '這是其他日期的申請，無法操作。' };
+    return { ok: true };
+  }
   if (ctx.voterRole !== ctx.applicantRole) {
     return { ok: false, reason: '這筆申請只有' + (ctx.applicantRole || '同職稱') + '可以操作（您的職稱是「' +
              (ctx.voterRole || '未設定') + '」）。' };

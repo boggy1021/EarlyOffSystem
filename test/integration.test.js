@@ -42,7 +42,7 @@ test('匯入班表：新增陌生員工、V 列為無法辨識', () => {
   const { ctx, imp } = setup();
   assert.match(imp.message, /寫入 6 筆/);         // 5 個上班 + 1 個 V
   assert.match(imp.message, /新增員工 1 位.*兼職/s);
-  assert.match(imp.message, /V × 1/);
+  assert.match(imp.message, /無法辨識.*\n兼職 11-10「V」/s);   // 角色是護理師的 V 仍無法辨識
   const sched = ctx.readAll_(ctx.TABLES.SCHED);
   const ding = sched.find((r) => r.name === '丁');
   assert.deepEqual([ding.start, ding.end, ding.baseStart, ding.baseEnd, ding.note], ['06:45', '16:45', '06:50', '16:50', '開門']);
@@ -204,8 +204,8 @@ test('同職稱：行政人員不能同意護理師，也不計入可同意人�
   assert.equal(v.data.counted, false);
   assert.match(v.data.reason, /只有護理師可以操作/);
   assert.equal(call('uE3', 'report', { id }).code, 'DENIED');          // 通知主管同樣限同職稱
-  // 丙（行政人員）自己申請：沒有其他行政人員 → 不能申請
-  assert.match(call('uE3', 'me').data.canApply.reason, /同職稱同仁只有 0 位/);
+  // 丙（行政人員）自己申請：沒有其他行政人員，只有主管 1 位 → 不能申請
+  assert.match(call('uE3', 'me').data.canApply.reason, /同職稱同仁（加上主管 1 位）只有 1 位/);
 });
 
 test('加班：表單 → 申請推播主管 → 主管核准 → 推播申請人；取消與重疊', () => {
@@ -215,7 +215,8 @@ test('加班：表單 → 申請推播主管 → 主管核准 → 推播申請�
   assert.equal(form.ok, true, form.error);
   assert.equal(form.data.days.length, 8);                 // 今天 + 補登 7 天
   assert.deepEqual(form.data.days[0], {
-    date: '2026-11-10', shift: { start: '06:50', end: '16:50' }, defaults: { start: '16:50', end: '17:20' }
+    date: '2026-11-10', shift: { start: '06:50', end: '16:50', breakStart: '', breakEnd: '' },
+    defaults: { start: '16:50', end: '17:20' }
   });
   assert.equal(form.data.days[1].shift, null);
   assert.equal(call('uNew', 'otForm').data.bindStatus, '未綁定');
@@ -329,6 +330,75 @@ test('加班審核人：「加班審核」為是的護理師也收得到、能�
   // 提前下班的同意資格不受影響：乙仍是護理師，可以同意甲
   assert.equal(call('uE1', 'me').data.eligibleCount, 3);
   assert.equal(call('uE2', 'decideView', { id }).code, 'DENIED');        // 提前下班的主管頁仍限主管
+});
+
+// 行政（壬、癸、子）與清潔（丑）在排班表上只寫 V；11/10 是星期二
+function setupStaff() {
+  const env = setup();
+  const { ctx } = env;
+  ctx.appendMany_(ctx.TABLES.EMP, [
+    { empId: 'A1', name: '壬', userId: 'uA1', bindStatus: '已確認', role: '行政人員' },
+    { empId: 'A2', name: '癸', userId: 'uA2', bindStatus: '已確認', role: '行政人員' },
+    { empId: 'A3', name: '子', userId: 'uA3', bindStatus: '已確認', role: '行政人員' },
+    { empId: 'C1', name: '丑', userId: 'uC1', bindStatus: '已確認', role: '清潔人員' }
+  ]);
+  const d = (day) => new Date(2015, 10, day);
+  ctx.readXlsxSheet_ = () => [
+    [115, '年', 11, '月'], [], [],
+    ['日 期', d(10)], ['星期姓名', 2],
+    ['甲', '7-5'], ['乙', '7-5'], ['丙', '7-5'], ['丁', '▲\n7-5'], ['戊', '7-3'], ['己', 'off'],
+    ['壬', 'V'], ['癸', 'off'], ['子', 'V'], ['丑', 'V'], ['▲需來開門', null]
+  ];
+  env.imp = ctx.importSchedule('fileid', '11511');
+  return env;
+}
+
+test('行政、清潔的 V：依角色換成時段，午休存在班表；匯入訊息不再列無法辨識', () => {
+  const { ctx, imp } = setupStaff();
+  assert.doesNotMatch(imp.message, /無法辨識/);
+  const s = ctx.readAll_(ctx.TABLES.SCHED);
+  const ren = s.find((r) => r.name === '壬'), chou = s.find((r) => r.name === '丑');
+  assert.deepEqual([ren.start, ren.end, ren.breakStart, ren.breakEnd, ren.note],
+    ['08:30', '17:30', '12:00', '13:00', '週二 16:30 可下班']);
+  assert.deepEqual([chou.start, chou.end, chou.breakStart, chou.breakEnd], ['07:30', '16:30', '12:00', '13:00']);
+  assert.equal(s.find((r) => r.name === '甲').breakStart, '');
+});
+
+test('行政加班：午休可以申請、上班時間與 16:30–17:30 不行', () => {
+  const { call, at } = setupStaff();
+  at('18:30');
+  const form = call('uA1', 'otForm').data.days[0];
+  assert.deepEqual(form.shift, { start: '08:30', end: '17:30', breakStart: '12:00', breakEnd: '13:00' });
+  assert.deepEqual(form.defaults, { start: '17:30', end: '18:00' });
+  const ot = (start, end) => call('uA1', 'otApply', { date: '2026-11-10', start, end, reason: '處理病歷' });
+  assert.match(ot('08:30', '12:30').error, /08:30–12:00、13:00–17:30）重疊/);
+  assert.match(ot('16:30', '17:30').error, /重疊/);        // 週二可以 16:30 走，但這段不能報加班
+  assert.match(ot('11:50', '12:20').error, /重疊/);
+  assert.equal(ot('12:30', '12:50').ok, true);            // 午休沒休息
+  assert.equal(ot('17:30', '18:00').ok, true);
+  assert.equal(call('uC1', 'otApply', { date: '2026-11-10', start: '12:00', end: '13:00', reason: 'x' }).ok, true);
+  assert.match(call('uC1', 'otApply', { date: '2026-11-10', start: '16:00', end: '17:00', reason: 'x' }).error, /重疊/);
+});
+
+test('行政提前下班：一位行政同仁 + 主管同意就核准；護理師的申請主管仍不算票', () => {
+  const { call, at, pushes } = setupStaff();
+  at('15:00');
+  const me = call('uA1', 'me').data;
+  assert.equal(me.canApply.ok, true, me.canApply.reason);
+  assert.equal(me.eligibleCount, 2);                       // 子 + 主管庚（癸休假）
+  const id = call('uA1', 'apply').data.request.id;
+  assert.equal(call('uE1', 'agree', { id }).data.counted, false);   // 護理師不能同意行政
+  const v1 = call('uS1', 'agree', { id });
+  assert.equal(v1.data.counted, true, v1.data.reason);
+  assert.equal(call('uS1', 'view', { id }).data.canReport.ok, false); // 主管不用通知主管
+  const v2 = call('uA3', 'agree', { id });
+  assert.equal(v2.data.request.status, '已核准');
+  assert.match(JSON.stringify(pushes[pushes.length - 1].body), /已核准/);
+  // 護理師的申請：主管按同意不算
+  const nid = call('uE1', 'apply').data.request.id;
+  assert.equal(call('uS1', 'agree', { id: nid }).data.counted, false);
+  // 子要申請：壬已核准提前下班、癸休假 → 只剩主管 1 位，不能申請
+  assert.match(call('uA3', 'me').data.canApply.reason, /（加上主管 1 位）只有 1 位/);
 });
 
 test('綁定：選名字 → 待確認 → 不能使用；已確認後不能改', () => {

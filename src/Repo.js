@@ -20,7 +20,8 @@ var TABLES = {
       ['date', '日期', 'date'], ['empId', '員工編號'], ['name', '姓名'],
       ['start', '上班時間', 'time'], ['end', '下班時間', 'time'],
       ['baseStart', '比對上班', 'time'], ['baseEnd', '比對下班', 'time'],
-      ['raw', '原始代號'], ['note', '備註']
+      ['raw', '原始代號'], ['note', '備註'],
+      ['breakStart', '午休開始', 'time'], ['breakEnd', '午休結束', 'time']
     ]
   },
   REQ: {
@@ -268,7 +269,8 @@ function employees_() {
 function shiftFromRow_(r) {
   var t = function (s) { return s ? hmToMin(s) : null; };
   return { empId: r.empId, name: r.name, date: r.date, start: t(r.start), end: t(r.end),
-           baseStart: t(r.baseStart), baseEnd: t(r.baseEnd), raw: r.raw };
+           baseStart: t(r.baseStart), baseEnd: t(r.baseEnd), raw: r.raw,
+           breakStart: t(r.breakStart), breakEnd: t(r.breakEnd) };
 }
 
 /** 某天的班表（只回傳有上班時段的人）。 */

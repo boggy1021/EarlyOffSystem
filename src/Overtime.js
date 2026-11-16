@@ -25,6 +25,19 @@ function isLiveOvertime(ot) {
   return ot.status === STATUS.SUPERVISOR || ot.status === STATUS.APPROVED;
 }
 
+/**
+ * 表定上班的時段（分鐘）。有午休（行政、清潔）就拆成兩段：午休沒申請就是休息，
+ * 有工作可以申請加班，所以午休不算上班時間。沒排班 → []。
+ */
+function workSegments(shift) {
+  if (!isWorking(shift)) return [];
+  var bs = shift.breakStart, be = shift.breakEnd;
+  if (typeof bs === 'number' && typeof be === 'number' && shift.start < bs && bs < be && be < shift.end) {
+    return [[shift.start, bs], [be, shift.end]];
+  }
+  return [[shift.start, shift.end]];
+}
+
 /** 表單的預設時段：有排班 → 表定下班起 30 分鐘；休假 → 空白。 */
 function overtimeDefaults(shift) {
   if (!isWorking(shift)) return { start: '', end: '' };
@@ -49,8 +62,13 @@ function checkCanApplyOvertime(ctx) {
   if (e <= s) return { ok: false, reason: '結束時間要晚於開始時間（不支援跨日加班）。' };
   if (!String(ctx.reason || '').trim()) return { ok: false, reason: '請填寫加班原因。' };
   var sh = ctx.shift;
-  if (isWorking(sh) && s < sh.end && e > sh.start) {
-    return { ok: false, reason: '加班時段不能和表定上班時間（' + minToHm(sh.start) + '–' + minToHm(sh.end) + '）重疊。' };
+  var work = workSegments(sh);
+  for (var k = 0; k < work.length; k++) {
+    if (s < work[k][1] && e > work[k][0]) {
+      return { ok: false, reason: '加班時段不能和表定上班時間（' + work.map(function (w) {
+        return minToHm(w[0]) + '–' + minToHm(w[1]);
+      }).join('、') + '）重疊。' };
+    }
   }
   var mine = ctx.existing || [];
   for (var i = 0; i < mine.length; i++) {

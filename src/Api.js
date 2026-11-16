@@ -109,10 +109,21 @@ function boundEmpIds_(emps, role) {
              .map(function (e) { return e.empId; });
 }
 
+/**
+ * 這些職稱的提前下班，主管按同意也算一票（2026-11-16：行政只有 3 人，常湊不到 2 位同仁，
+ * 門檻 2 = 一位行政同仁 + 主管）。
+ */
+var SUPERVISOR_VOTES_FOR_ = ['行政人員'];
+
+function supervisorVotes_(voterRole, applicantRole) {
+  return voterRole === ROLE.SUPERVISOR && SUPERVISOR_VOTES_FOR_.indexOf(applicantRole) >= 0;
+}
+
 /** 申請人與同仁都可以使用的資格檢查（同意、通知主管共用）。 */
 function colleagueEligibility_(req, emp, now) {
   var applicant = findEmployee_(req.empId);
   return checkColleague({
+    supervisorVotes: supervisorVotes_(emp.role, applicant ? applicant.role : ''),
     voterRole: emp.role,
     applicantRole: applicant ? applicant.role : '',
     request: req,
@@ -137,11 +148,18 @@ function applyContext_(emp, now, cfg) {
     me: me, fromMin: now.min, toMin: toMin, toleranceMin: cfg.toleranceMin, todayShifts: today,
     approvedEmpIds: approvedEmpIdsOn_(now.date, reqs), boundEmpIds: boundEmpIds_(emps, emp.role)
   }) : [];
+  // 行政人員：已綁定的主管也可以同意，算進人數
+  var sups = SUPERVISOR_VOTES_FOR_.indexOf(emp.role) >= 0
+    ? emps.filter(function (e) {
+        return e.role === ROLE.SUPERVISOR && e.bindStatus === BIND.OK && e.userId && e.empId !== emp.empId;
+      }).length
+    : 0;
+  var count = eligible.length + sups;
   var check = checkCanApply({
-    now: now, me: me, myRequestsToday: mine, eligibleCount: eligible.length, threshold: cfg.threshold,
-    windowMin: Math.max(0, toMin - now.min)
+    now: now, me: me, myRequestsToday: mine, eligibleCount: count, threshold: cfg.threshold,
+    windowMin: Math.max(0, toMin - now.min), supervisorCount: sups
   });
-  return { me: me, mine: mine, eligibleCount: eligible.length, check: check };
+  return { me: me, mine: mine, eligibleCount: count, check: check };
 }
 
 // ── 申請人 ───────────────────────────────────────────────
@@ -213,13 +231,21 @@ function apiCancel_(who, body) {
 
 // ── 同仁 ─────────────────────────────────────────────────
 
+/** 「通知主管」：主管本人可以同意行政人員的申請，但不需要通知自己。 */
+function reportCheck_(req, emp, elig) {
+  if (emp.role === ROLE.SUPERVISOR) {
+    return { ok: false, reason: '主管不需要通知主管；不同意就不要按，逾時會自動失效。', freeze: false };
+  }
+  return checkCanReport(req, elig, now_());
+}
+
 function apiView_(who, body) {
   var emp = requireEmployee_(who.userId);
   var req = findRequest_(body.id);
   var cfg = settings_();
   var elig = colleagueEligibility_(req, emp, now_());
   var mineCounted = countedVotes_(req.id).some(function (v) { return v.voterEmpId === emp.empId; });
-  var report = checkCanReport(req, elig, now_());
+  var report = reportCheck_(req, emp, elig);
   return {
     request: summary_(req, cfg),
     iAmApplicant: req.empId === emp.empId,
@@ -256,7 +282,7 @@ function apiReport_(who, body) {
   var emp = requireEmployee_(who.userId);
   var req = findRequest_(body.id);
   var elig = colleagueEligibility_(req, emp, now_());
-  var chk = checkCanReport(req, elig, now_());
+  var chk = reportCheck_(req, emp, elig);
   if (!chk.ok) throw apiError_('DENIED', chk.reason);
   var reason = String(body.reason || '').trim().slice(0, 200);
   append_(TABLES.REPORT, {
@@ -376,7 +402,11 @@ function apiOtForm_(who) {
       var sh = mine[d] || null;
       return {
         date: d,
-        shift: sh ? { start: minToHm(sh.start), end: minToHm(sh.end) } : null,
+        shift: sh ? {
+          start: minToHm(sh.start), end: minToHm(sh.end),
+          breakStart: sh.breakStart !== null ? minToHm(sh.breakStart) : '',
+          breakEnd: sh.breakEnd !== null ? minToHm(sh.breakEnd) : ''
+        } : null,
         defaults: overtimeDefaults(sh)
       };
     })
